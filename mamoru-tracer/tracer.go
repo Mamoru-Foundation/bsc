@@ -42,11 +42,8 @@ func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, re
 		blockData,
 	}))
 
-	transactions, transactionArgs := feeder.FeedTransactions(block, receipts)
+	transactions := feeder.FeedTransactions(block, receipts)
 
-	builder.AddData(evm_types.NewTransactionArgData(
-		transactionArgs,
-	))
 	builder.AddData(evm_types.NewTransactionData(
 		transactions,
 	))
@@ -84,5 +81,6 @@ func finish(start time.Time, builder mamoru_sniffer.BlockchainDataCtxBuilder, bl
 
 func IsSnifferEnable() bool {
 	isEnable, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
+
 	return ok && isEnable == "true"
 }
