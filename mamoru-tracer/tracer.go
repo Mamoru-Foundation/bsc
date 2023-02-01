@@ -25,7 +25,7 @@ func init() {
 	}
 }
 
-func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, receipts types.Receipts, feeder tracer.Feeder) {
+func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, receipts types.Receipts) {
 	builder := mamoru_sniffer.NewBlockchainDataCtxBuilder()
 	snifferStart := time.Now()
 	defer finish(snifferStart, builder, block.Number(), block.Hash())
@@ -34,8 +34,10 @@ func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, re
 	if err != nil {
 		return
 	}
-	log.Info("Trace block", "elapsed", common.PrettyDuration(time.Since(snifferStart)))
+	log.Info("Trace block", "elapsed", common.PrettyDuration(time.Since(snifferStart)),
+		"number", block.Number().String())
 
+	feeder := tracer.NewFeed(tracerCfg.GetChainConfig())
 	blockData := feeder.FeedBlock(block)
 
 	builder.AddData(evm_types.NewBlockData([]evm_types.Block{
@@ -48,20 +50,14 @@ func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, re
 		transactions,
 	))
 
-	callTraces, callTraceArgs := feeder.FeedCalTraces(callFrames, block.NumberU64())
+	callTraces := feeder.FeedCalTraces(callFrames, block.NumberU64())
 
-	builder.AddData(evm_types.NewCallTraceArgData(
-		callTraceArgs,
-	))
 	builder.AddData(evm_types.NewCallTraceData(
 		callTraces,
 	))
 
-	events, eventTopics := feeder.FeedEvents(receipts)
+	events := feeder.FeedEvents(receipts)
 
-	builder.AddData(evm_types.NewEventTopicData(
-		eventTopics,
-	))
 	builder.AddData(evm_types.NewEventData(
 		events,
 	))
@@ -76,7 +72,7 @@ func finish(start time.Time, builder mamoru_sniffer.BlockchainDataCtxBuilder, bl
 		"number", blockNumber,
 		"hash", blockHash,
 	}
-	log.Info("Sniff block finish", logCtx...)
+	log.Info("Sniffer finish", logCtx...)
 }
 
 func IsSnifferEnable() bool {

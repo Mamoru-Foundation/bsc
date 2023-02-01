@@ -8,17 +8,17 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-var _ Feeder = &BSCFeed{}
+var _ Feeder = &EthFeed{}
 
-type BSCFeed struct {
+type EthFeed struct {
 	chainConfig *params.ChainConfig
 }
 
 func NewFeed(chainConfig *params.ChainConfig) Feeder {
-	return &BSCFeed{chainConfig: chainConfig}
+	return &EthFeed{chainConfig: chainConfig}
 }
 
-func (f *BSCFeed) FeedBlock(block *types.Block) evm_types.Block {
+func (f *EthFeed) FeedBlock(block *types.Block) evm_types.Block {
 	var blockData evm_types.Block
 
 	blockData.BlockIndex = block.NumberU64()
@@ -28,27 +28,17 @@ func (f *BSCFeed) FeedBlock(block *types.Block) evm_types.Block {
 	blockData.Nonce = block.Nonce()
 	blockData.Status = ""
 	blockData.Timestamp = block.Time()
-	blockData.BlockReward = block.Coinbase().Bytes()      // ?
-	blockData.FeeRecipient = block.ReceiptHash().String() // ?
+	blockData.BlockReward = block.Coinbase().Bytes()
+	blockData.FeeRecipient = block.ReceiptHash().String()
 	blockData.TotalDifficulty = block.Difficulty().Uint64()
-	blockData.Size = float64(block.Size()) // bytes
+	blockData.Size = float64(block.Size())
 	blockData.GasUsed = block.GasUsed()
 	blockData.GasLimit = block.GasLimit()
-	blockData.BurntFees = nil                //? gasprice
-	blockData.PosProposedOnTime = 0          // ?
-	blockData.PosSlot = 0                    // ?
-	blockData.PosEpoch = 0                   // ?
-	blockData.PosProposerIndex = 0           // ?
-	blockData.PosSlotRootHash = nil          // ?
-	blockData.PosBeaconChainDepositCount = 0 // ?
-	blockData.PosSlotGraffiti = nil          // ?
-	blockData.PosBlockRandomness = nil       // ?
-	blockData.PosRandomReveal = nil          // ?
 
 	return blockData
 }
 
-func (f *BSCFeed) FeedTransactions(block *types.Block, receipts types.Receipts) []evm_types.Transaction {
+func (f *EthFeed) FeedTransactions(block *types.Block, receipts types.Receipts) []evm_types.Transaction {
 	signer := types.MakeSigner(f.chainConfig, block.Number())
 	var transactions []evm_types.Transaction
 
@@ -60,7 +50,6 @@ func (f *BSCFeed) FeedTransactions(block *types.Block, receipts types.Receipts) 
 		transaction.Nonce = tx.Nonce()
 		transaction.Status = receipts[i].Status
 		transaction.BlockIndex = block.NumberU64()
-		//transaction.Timestamp = uint64(tx.Time().Unix()) // todo remove field Timestamp in evm_type
 		address, err := types.Sender(signer, tx)
 		if err != nil {
 			fmt.Println("Sender error", err)
@@ -73,9 +62,9 @@ func (f *BSCFeed) FeedTransactions(block *types.Block, receipts types.Receipts) 
 		transaction.Fee = tx.GasFeeCap().Uint64()
 		transaction.GasPrice = tx.GasPrice().Uint64()
 		transaction.GasLimit = tx.Gas()
-		transaction.GasUsed = tx.Cost().Uint64() // Cost returns gas * gasPrice + value.
+		transaction.GasUsed = tx.Cost().Uint64()
 		transaction.Size = float64(tx.Size())
-		//transaction.Imput = tx.Data() //todo  implement field Input to evm_type
+		transaction.Input = tx.Data()
 
 		transactions = append(transactions, transaction)
 	}
@@ -83,9 +72,8 @@ func (f *BSCFeed) FeedTransactions(block *types.Block, receipts types.Receipts) 
 	return transactions
 }
 
-func (f *BSCFeed) FeedCalTraces(callFrames []*TxTraceResult, blockNumber uint64) ([]evm_types.CallTrace, []evm_types.CallTraceArg) {
+func (f *EthFeed) FeedCalTraces(callFrames []*TxTraceResult, blockNumber uint64) []evm_types.CallTrace {
 	var callTraces []evm_types.CallTrace
-	var callTraceArgs []evm_types.CallTraceArg
 	for i, frame := range callFrames {
 		if frame != nil && frame.Error != "" {
 			log.Error("call frame error", "err", frame.Error, "mamoru-tracer", "bsc_feed")
@@ -107,28 +95,16 @@ func (f *BSCFeed) FeedCalTraces(callFrames []*TxTraceResult, blockNumber uint64)
 			callTrace.GasLimit = call.Gas
 			callTrace.GasUsed = call.GasUsed
 			callTrace.Input = call.Input
-			callTrace.MethodId = call.MethodId
-
-			for _, arg := range call.MethodArgs {
-				callTraceArgs = append(callTraceArgs, evm_types.CallTraceArg{
-					CallTraceSeq: uint32(seq),
-					BlockIndex:   blockNumber,
-					TxIndex:      uint32(i),
-					Depth:        call.Depth,
-					Arg:          arg,
-				})
-			}
 
 			callTraces = append(callTraces, callTrace)
 		}
 	}
 
-	return callTraces, callTraceArgs
+	return callTraces
 }
 
-func (f *BSCFeed) FeedEvents(receipts types.Receipts) ([]evm_types.Event, []evm_types.EventTopic) {
+func (f *EthFeed) FeedEvents(receipts types.Receipts) []evm_types.Event {
 	var events []evm_types.Event
-	var eventTopics []evm_types.EventTopic
 	for _, receipt := range receipts {
 		for _, rlog := range receipt.Logs {
 			var event evm_types.Event
@@ -140,16 +116,9 @@ func (f *BSCFeed) FeedEvents(receipts types.Receipts) ([]evm_types.Event, []evm_
 			event.Address = rlog.Address.String()
 			event.Data = rlog.Data
 
-			for _, t := range rlog.Topics {
-				eventTopics = append(eventTopics, evm_types.EventTopic{
-					Index: uint32(rlog.Index),
-					Topic: t.String(),
-				})
-			}
-
 			events = append(events, event)
 		}
 	}
 
-	return events, eventTopics
+	return events
 }

@@ -35,6 +35,10 @@ func NewTracerConfig(stateDB *state.StateDB, chainConfig *params.ChainConfig, ch
 	}
 }
 
+func (c *Config) GetChainConfig() *params.ChainConfig {
+	return c.chainConfig
+}
+
 // txTraceTask represents a single transaction trace task when an entire block
 // is being traced.
 type txTraceTask struct {
@@ -94,7 +98,7 @@ func TraceBlock(ctx context.Context,
 			}
 		})
 	}
-	// BSCFeed the transactions into the tracers and return
+	// EthFeed the transactions into the tracers and return
 	var failed error
 	blockCtx := core.NewEVMBlockContext(block.Header(), config.chainContext, nil)
 	for i, tx := range txs {

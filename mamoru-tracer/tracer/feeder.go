@@ -8,6 +8,6 @@ import (
 type Feeder interface {
 	FeedBlock(*types.Block) evm_types.Block
 	FeedTransactions(*types.Block, types.Receipts) []evm_types.Transaction
-	FeedCalTraces([]*TxTraceResult, uint64) ([]evm_types.CallTrace, []evm_types.CallTraceArg)
-	FeedEvents(types.Receipts) ([]evm_types.Event, []evm_types.EventTopic)
+	FeedCalTraces([]*TxTraceResult, uint64) []evm_types.CallTrace
+	FeedEvents(types.Receipts) []evm_types.Event
 }
