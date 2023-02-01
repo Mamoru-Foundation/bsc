@@ -13,15 +13,12 @@ on:
 
 jobs:
   unit-test:
-    strategy:
-      matrix:
-        go-version: [1.17.x]
     runs-on: ubuntu-latest
     steps:
     - name: Install Go
       uses: actions/setup-go@v3
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: 1.17.x
     - run: go version
 
     - name: Checkout code
@@ -32,11 +29,9 @@ jobs:
         # In order:
         # * Module download cache
         # * Build cache (Linux)
-        # * Build cache (Mac)
         path: |
           ~/go/pkg/mod
           ~/.cache/go-build
-          ~/Library/Caches/go-build
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
@@ -44,8 +39,8 @@ jobs:
     - name: Unit Test
       env:
         ANDROID_HOME: "" # Skip android test
-      run: go test -p 1 -timeout 1h ./mamoru-tracer/... ./accounts/... ./common/... ./consensus/... ./console/... \
-        ./core/... ./crypto/... ./eth/... ./ethclient/... ./ethdb/... ./event/... ./graphql/... ./les/... ./light/... \
-        ./log/... ./metrics/... ./miner/... ./mobile/... ./node/... ./p2p/... ./params/... ./rlp/... ./rpc/... \
-        ./tests/... ./trie/... ./cmd/geth/...
+      run: go test -p 1 -timeout 1h ./mamoru-tracer/... ./accounts/... ./common/... ./consensus/... ./console/... ./core/... ./crypto/... ./eth/... ./ethclient/... ./ethdb/... ./event/... ./graphql/... ./les/... ./light/... ./log/... ./metrics/... ./miner/... ./mobile/... ./node/... ./p2p/... ./params/... ./rlp/... ./rpc/... ./tests/... ./trie/... ./cmd/geth/...
+
+
+
 
