@@ -8,14 +8,7 @@ FROM golang:1.17 as builder
 
 ENV GLIBC_VERSION 2.35-r0
 
-RUN apt install make gcc  git bash curl libc-dev libstdc++6
-#  && curl -Lo /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
-#  && curl -Lo glibc.apk "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk" \
-#  && curl -Lo glibc-bin.apk "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk" \
-#  && apk add --force-overwrite glibc-bin.apk glibc.apk \
-#  && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib \
-#  && echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf \
-#  && rm -rf /var/cache/apk/* glibc.apk glibc-bin.apk
+RUN apt install make gcc git bash
 
 # Get dependencies - will also be cached if we won't change go.mod/go.sum
 COPY go.mod /go-ethereum/
