@@ -23,4 +23,4 @@ if [ ! -d ${GETH_DIR} ]; then
   mkdir -p ${GETH_DIR}
 fi
 
-exec "geth" "--config" ${BSC_CONFIG} "$@"
+exec "geth" "--config" ${BSC_CONFIG} "--datadir" ${DATA_DIR} "$@"
