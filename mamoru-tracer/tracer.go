@@ -17,15 +17,22 @@ var sniffer *mamoru_sniffer.Sniffer
 
 func init() {
 	if IsSnifferEnable() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Error("Mamoru Sniffer Recovered:", r)
+			}
+		}()
 		var err error
 		sniffer, err = mamoru_sniffer.Connect()
 		if err != nil {
+			log.Error("Mamoru Sniffer connect error:", err)
 			panic(err)
 		}
 	}
 }
 
 func Trace(ctx context.Context, tracerCfg *tracer.Config, block *types.Block, receipts types.Receipts) {
+
 	builder := mamoru_sniffer.NewBlockchainDataCtxBuilder()
 	snifferStart := time.Now()
 	defer finish(snifferStart, builder, block.Number(), block.Hash())
