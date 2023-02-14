@@ -20,7 +20,6 @@ func init() {
 		sniffer, err = mamoru_sniffer.Connect()
 		if err != nil {
 			log.Error("Mamoru Sniffer connect error:", err)
-			panic(err)
 		}
 	}
 }
