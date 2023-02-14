@@ -9,5 +9,5 @@ type Feeder interface {
 	FeedBlock(*types.Block) evm_types.Block
 	FeedTransactions(*types.Block, types.Receipts) []evm_types.Transaction
 	FeedEvents(types.Receipts) []evm_types.Event
-	FeedCalTraces([]*CallFrame, uint64) []evm_types.CallTrace
+	FeedCallTraces([]*CallFrame, uint64) []evm_types.CallTrace
 }

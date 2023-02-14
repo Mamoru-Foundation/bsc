@@ -70,7 +70,7 @@ func (f *EthFeed) FeedTransactions(block *types.Block, receipts types.Receipts) 
 	return transactions
 }
 
-func (f *EthFeed) FeedCalTraces(callFrames []*CallFrame, blockNumber uint64) []evm_types.CallTrace {
+func (f *EthFeed) FeedCallTraces(callFrames []*CallFrame, blockNumber uint64) []evm_types.CallTrace {
 	var callTraces []evm_types.CallTrace
 	for i, frame := range callFrames {
 		var callTrace evm_types.CallTrace

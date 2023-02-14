@@ -16,11 +16,6 @@ var sniffer *mamoru_sniffer.Sniffer
 
 func init() {
 	if IsSnifferEnable() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Error("Mamoru Sniffer Recovered:", r)
-			}
-		}()
 		var err error
 		sniffer, err = mamoru_sniffer.Connect()
 		if err != nil {
@@ -61,7 +56,7 @@ func (t *Tracer) FeedEvents(receipts types.Receipts) {
 
 func (t *Tracer) FeedCalTraces(callFrames []*CallFrame, blockNumber uint64) {
 	t.builder.AddData(evm_types.NewCallTraceData(
-		t.feeder.FeedCalTraces(callFrames, blockNumber),
+		t.feeder.FeedCallTraces(callFrames, blockNumber),
 	))
 }
 
