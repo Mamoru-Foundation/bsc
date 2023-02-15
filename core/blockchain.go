@@ -1663,15 +1663,14 @@ func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, receipts []*types
 	tracer.FeedTransactions(block, receipts)
 	tracer.FeedEvents(receipts)
 	// Collect Call Trace data  from EVM
-	callTracer := bc.GetVMConfig().Tracer.(*mamoru.CallTracer)
-	result, err := callTracer.GetResult()
-	if err != nil {
-		log.Error("Mamoru Sniffer Tracer Error", "err", err)
-		return 0, err
+	if callTracer, ok := bc.GetVMConfig().Tracer.(*mamoru.CallTracer); ok {
+		result, err := callTracer.GetResult()
+		if err != nil {
+			log.Error("Mamoru Sniffer Tracer Error", "err", err)
+			return 0, err
+		}
+		tracer.FeedCalTraces(result, block.NumberU64())
 	}
-
-	tracer.FeedCalTraces(result, block.NumberU64())
-
 	tracer.Send(startTime, block.Number(), block.Hash())
 
 	////////////////////////////////////////////////////////////
