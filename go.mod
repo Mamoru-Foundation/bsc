@@ -279,4 +279,6 @@ replace (
 
 )
 
+replace github.com/tendermint/tendermint => github.com/bnb-chain/tendermint v0.31.15
+
 require github.com/Mamoru-Foundation/geth-mamoru-core-sdk v1.0.0 // indirect
