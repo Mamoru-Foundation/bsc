@@ -67,7 +67,7 @@ require (
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
 
-require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.1.3
+require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.1.4
 
 require (
 	github.com/Azure/azure-pipeline-go v0.2.2 // indirect

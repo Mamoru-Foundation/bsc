@@ -463,7 +463,7 @@ func (lc *LightChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 		lc.chainSideFeed.Send(core.ChainSideEvent{Block: block})
 	}
 	////////////////////////////////////////////////////////////////////////////
-	if !mamoru.IsSnifferEnable() {
+	if !mamoru.IsSnifferEnable() || !mamoru.Connect() {
 		return 0, nil
 	}
 	ctx := context.Background()
