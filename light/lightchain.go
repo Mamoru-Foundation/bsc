@@ -492,7 +492,6 @@ func (lc *LightChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 	tracer.FeedTransactions(block, receipts)
 	tracer.FeedEvents(receipts)
 	trStartTime := time.Now()
-	log.Info("TraceBlock start", "elapsed", trStartTime.String())
 	//Launch EVM and Collect Call Trace data
 	callFrames, err := call_tracer.TraceBlock(ctx, call_tracer.NewTracerConfig(stateDb.Copy(), lc.Config(), lc), lastBlock)
 	if err != nil {
