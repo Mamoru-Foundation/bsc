@@ -1,6 +1,8 @@
 package mamoru
 
 import (
+	"math/big"
+
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/evm_types"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -36,20 +38,20 @@ func (f *EthFeed) FeedBlock(block *types.Block) evm_types.Block {
 	return blockData
 }
 
-func (f *EthFeed) FeedTransactions(block *types.Block, receipts types.Receipts) []evm_types.Transaction {
-	signer := types.MakeSigner(f.chainConfig, block.Number())
+func (f *EthFeed) FeedTransactions(blockNumber *big.Int, txs types.Transactions, receipts types.Receipts) []evm_types.Transaction {
+	signer := types.MakeSigner(f.chainConfig, blockNumber)
 	var transactions []evm_types.Transaction
 
-	for i, tx := range block.Transactions() {
+	for i, tx := range txs {
 		var transaction evm_types.Transaction
 		transaction.TxIndex = uint32(i)
 		transaction.TxHash = tx.Hash().String()
 		transaction.Type = tx.Type()
 		transaction.Nonce = tx.Nonce()
-		if receipt := receipts[i]; receipt != nil {
-			transaction.Status = receipt.Status
+		if receipts.Len() > i {
+			transaction.Status = receipts[i].Status
 		}
-		transaction.BlockIndex = block.NumberU64()
+		transaction.BlockIndex = blockNumber.Uint64()
 		address, err := types.Sender(signer, tx)
 		if err != nil {
 			log.Error("Sender error", "err", err, "mamoru-tracer", "bsc_feed")
