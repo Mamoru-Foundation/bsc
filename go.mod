@@ -70,6 +70,7 @@ require (
 )
 
 require (
+	github.com/Mamoru-Foundation/mamoru-sniffer-go v0.2.1
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/fatih/structs v1.1.0
 )
