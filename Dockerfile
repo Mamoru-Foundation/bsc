@@ -28,7 +28,7 @@ ENV HOME=${BSC_HOME}
 ENV DATA_DIR=/data
 
 ENV PACKAGES ca-certificates jq unzip\
-  bash tini \
+  bash tini htop \
   grep curl sed
 
 RUN apt-get update && apt-get install -y $PACKAGES \
