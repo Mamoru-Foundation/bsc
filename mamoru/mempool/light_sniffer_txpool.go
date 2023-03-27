@@ -2,19 +2,19 @@ package mempool
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/light"
-	"github.com/ethereum/go-ethereum/mamoru/call_tracer"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/light"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/call_tracer"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -95,18 +95,18 @@ func (bc *LightSnifferBackend) SnifferLoop() {
 		case newTx := <-bc.newTxsEvent: //work
 			log.Info("Mamoru LightTxPool Sniffer start", "number", head.Number.Uint64())
 			log.Info("NewTx Event", "txs", len(newTx.Txs))
-			bc.proccess(ctx, head, newTx.Txs)
+			bc.process(ctx, head, newTx.Txs)
 
 		case newHead := <-bc.newHeadEvent:
 			if newHead.Block != nil { //work
 				head = newHead.Block.Header()
-				bc.proccess(ctx, head, newHead.Block.Transactions())
+				bc.process(ctx, head, newHead.Block.Transactions())
 			}
 		}
 	}
 }
 
-func (bc *LightSnifferBackend) proccess(ctx context.Context, head *types.Header, txs types.Transactions) {
+func (bc *LightSnifferBackend) process(ctx context.Context, head *types.Header, txs types.Transactions) {
 	log.Info("Mamoru LightTxPool Sniffer start", "number", head.Number.Uint64())
 	log.Info("New Header Event receive", "number", head.Number.Uint64())
 

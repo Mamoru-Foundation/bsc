@@ -20,8 +20,6 @@ package les
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/mamoru"
-	"github.com/ethereum/go-ethereum/mamoru/mempool"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -51,6 +49,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/mempool"
 )
 
 type LightEthereum struct {
