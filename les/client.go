@@ -20,8 +20,6 @@ package les
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/mamoru"
-	"github.com/ethereum/go-ethereum/mamoru/mempool"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
