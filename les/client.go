@@ -18,7 +18,10 @@
 package les
 
 import (
+	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/mempool"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -151,6 +154,12 @@ func New(stack *node.Node, config *ethconfig.Config) (*LightEthereum, error) {
 	leth.chainReader = leth.blockchain
 	leth.txPool = light.NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
 
+	////////////////////////////////////////////////////////
+	tracer := mamoru.NewTracer(mamoru.NewFeed(chainConfig))
+	sniffer := mempool.NewLightSniffer(context.Background(), leth.txPool, leth.blockchain, chainConfig, tracer)
+
+	go sniffer.SnifferLoop()
+	////////////////////////////////////////////////////////
 	// Set up checkpoint oracle.
 	leth.oracle = leth.setupOracle(stack, genesisHash, config)
 
