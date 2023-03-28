@@ -249,8 +249,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	eth.txPool = core.NewTxPool(config.TxPool, chainConfig, eth.blockchain)
 
 	////////////////////////////////////////////////////////
-	tracer := mamoru.NewTracer(mamoru.NewFeed(chainConfig))
-	sniffer := mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, tracer)
+	sniffer := mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig))
 
 	go sniffer.SnifferLoop()
 	////////////////////////////////////////////////////////
