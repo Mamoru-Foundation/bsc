@@ -60,6 +60,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/Mamoru-Foundation/mamoru-sniffer-go v0.2.1 h1:OsbAQ3IH5Yp57HF7NO9cL3zAhFoperT/TbVqXkWVODs=
 github.com/Mamoru-Foundation/mamoru-sniffer-go v0.2.1/go.mod h1:hnmSj2y/1Ddi4I5tyXVyMPIHslvfNZARuLpbVKwr32s=
+github.com/Mamoru-Foundation/mamoru-sniffer-go v0.3.0 h1:EYSUBi0u98G5/fYDzioM0V1EVe3GaNHJywSrXaJRTF8=
+github.com/Mamoru-Foundation/mamoru-sniffer-go v0.3.0/go.mod h1:hnmSj2y/1Ddi4I5tyXVyMPIHslvfNZARuLpbVKwr32s=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/VictoriaMetrics/fastcache v1.6.0 h1:C/3Oi3EiBCqufydp1neRZkqcwmEiuRT9c3fqvvgKm5o=
 github.com/VictoriaMetrics/fastcache v1.6.0/go.mod h1:0qHz5QP0GMX4pfmMA/zt5RgfNuXJrTP0zS7DqpHGGTw=
