@@ -1,9 +1,9 @@
 package mamoru
 
 import (
-	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"math/big"
 
+	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
