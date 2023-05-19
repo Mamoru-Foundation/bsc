@@ -23,6 +23,7 @@ type blockChain interface {
 	StateAt(root common.Hash) (*state.StateDB, error)
 	State() (*state.StateDB, error)
 
+	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 }
 
@@ -38,6 +39,8 @@ type SnifferBackend struct {
 	chEv chan core.ChainEvent
 
 	TxSub   event.Subscription
+	headSub event.Subscription
+
 	chEvSub event.Subscription
 
 	ctx     context.Context
@@ -52,8 +55,10 @@ func NewSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainCon
 		chain:       chain,
 		chainConfig: chainConfig,
 
-		newTxsEvent: make(chan core.NewTxsEvent, core.DefaultTxPoolConfig.GlobalQueue),
-		chEv:        make(chan core.ChainEvent, 10),
+		newTxsEvent:  make(chan core.NewTxsEvent, core.DefaultTxPoolConfig.GlobalQueue),
+		newHeadEvent: make(chan core.ChainHeadEvent, 10),
+
+		chEv: make(chan core.ChainEvent, 10),
 
 		feeder: feeder,
 
@@ -63,6 +68,7 @@ func NewSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainCon
 		sniffer: sniffer,
 	}
 	sb.TxSub = sb.SubscribeNewTxsEvent(sb.newTxsEvent)
+	sb.headSub = sb.SubscribeChainHeadEvent(sb.newHeadEvent)
 	sb.chEvSub = sb.SubscribeChainEvent(sb.chEv)
 
 	return sb
@@ -72,6 +78,11 @@ func (bc *SnifferBackend) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event
 	return bc.txPool.SubscribeNewTxsEvent(ch)
 }
 
+// SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
+func (bc *SnifferBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
+	return bc.chain.SubscribeChainHeadEvent(ch)
+}
+
 func (bc *SnifferBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	return bc.chain.SubscribeChainEvent(ch)
 }
@@ -79,6 +90,7 @@ func (bc *SnifferBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.S
 func (bc *SnifferBackend) SnifferLoop() {
 	defer func() {
 		bc.TxSub.Unsubscribe()
+		bc.headSub.Unsubscribe()
 		bc.chEvSub.Unsubscribe()
 	}()
 
@@ -89,6 +101,7 @@ func (bc *SnifferBackend) SnifferLoop() {
 		select {
 		case <-bc.ctx.Done():
 		case <-bc.TxSub.Err():
+		case <-bc.headSub.Err():
 		case <-bc.chEvSub.Err():
 			cancel()
 			return
@@ -96,8 +109,17 @@ func (bc *SnifferBackend) SnifferLoop() {
 		case newTx := <-bc.newTxsEvent:
 			go bc.process(ctx, block, newTx.Txs)
 
+		case newHead := <-bc.newHeadEvent:
+			if newHead.Block != nil && newHead.Block.NumberU64() > block.NumberU64() {
+				log.Info("New core.ChainHeadEvent", "number", newHead.Block.NumberU64(), "ctx", "txpool")
+				bc.mu.RLock()
+				block = newHead.Block
+				bc.mu.RUnlock()
+			}
+
 		case newChEv := <-bc.chEv:
 			if newChEv.Block != nil && newChEv.Block.NumberU64() > block.NumberU64() {
+				log.Info("New core.ChainEvent", "number", newChEv.Block.NumberU64(), "ctx", "txpool")
 				bc.mu.RLock()
 				block = newChEv.Block
 				bc.mu.RUnlock()
