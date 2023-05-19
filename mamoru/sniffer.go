@@ -15,8 +15,6 @@ var (
 	SnifferConnectFunc = mamoru_sniffer.Connect
 )
 
-const BlockDiff = 100
-
 type statusProgress interface {
 	Progress() ethereum.SyncProgress
 }
@@ -24,22 +22,39 @@ type statusProgress interface {
 type Sniffer struct {
 	mu     sync.Mutex
 	status statusProgress
+	synced bool
 }
 
 func NewSniffer() *Sniffer {
 	return &Sniffer{}
 }
 
+var syncing bool
+
 func (s *Sniffer) CheckSynced() bool {
 	if s.status == nil {
 		return false
 	}
+
 	progress := s.status.Progress()
-	// todo check if block diff is too big
-	if progress.CurrentBlock > 0 && progress.HighestBlock > 0 {
-		log.Info("Mamoru Sniffer sync", "current", progress.CurrentBlock, "highest", progress.HighestBlock)
+
+	log.Info("Mamoru Sniffer sync", "syncing", s.synced, "diff", int64(progress.HighestBlock)-int64(progress.CurrentBlock))
+
+	if progress.CurrentBlock < progress.HighestBlock {
+		s.synced = false
+	}
+	if s.synced {
 		return true
 	}
+
+	if progress.CurrentBlock > 0 && progress.HighestBlock > 0 && syncing {
+		log.Info("Mamoru Sniffer sync", "current", progress.CurrentBlock)
+		if int64(progress.HighestBlock)-int64(progress.CurrentBlock) <= 0 {
+			s.synced = true
+		}
+		return true
+	}
+
 	return false
 }
 
