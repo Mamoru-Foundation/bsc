@@ -18,6 +18,7 @@
 package eth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -62,6 +63,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/mempool"
 )
 
 // Config contains the configuration options of the ETH protocol.
@@ -275,9 +279,9 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}
 
 	////////////////////////////////////////////////////////
-	//sniffer := mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig))
+	sniffer := mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig))
 
-	//go sniffer.SnifferLoop()
+	go sniffer.SnifferLoop()
 	////////////////////////////////////////////////////////
 
 	// Permit the downloader to use the trie cache allowance during fast sync
