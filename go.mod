@@ -1,6 +1,6 @@
 module github.com/ethereum/go-ethereum
 
-go 1.20
+go 1.19
 
 require (
 	github.com/Azure/azure-storage-blob-go v0.7.0
@@ -281,5 +281,4 @@ replace (
 
 replace github.com/tendermint/tendermint => github.com/bnb-chain/tendermint v0.31.15
 
-
-require 	github.com/Mamoru-Foundation/mamoru-sniffer-go v0.3.0 // indirect
+require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.3.0
