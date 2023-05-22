@@ -23,6 +23,11 @@ func NewTracer(feeder Feeder) *Tracer {
 	return tr
 }
 
+// SetTxpoolCtx Set the context of the sniffer
+func (t *Tracer) SetTxpoolCtx() {
+	t.builder.SetMempoolSource()
+}
+
 func (t *Tracer) FeedBlock(block *types.Block) {
 	defer t.mu.Unlock()
 	t.mu.Lock()
@@ -60,7 +65,8 @@ func (t *Tracer) Send(start time.Time, blockNumber *big.Int, blockHash common.Ha
 	t.mu.Lock()
 
 	if sniffer != nil {
-		sniffer.ObserveEvmData(t.builder.Finish(blockNumber.String(), blockHash.String()))
+		t.builder.SetBlockData(blockNumber.String(), blockHash.String())
+		sniffer.ObserveEvmData(t.builder.Finish())
 	}
 	logCtx := []interface{}{
 		"elapsed", common.PrettyDuration(time.Since(start)),
