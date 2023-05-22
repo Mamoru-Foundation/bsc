@@ -42,7 +42,6 @@ type LightSnifferBackend struct {
 }
 
 func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockChain, chainConfig *params.ChainConfig) *LightSnifferBackend {
-	sniffer := mamoru.NewSniffer()
 	sb := &LightSnifferBackend{
 		txPool:       txPool,
 		chain:        chain,
@@ -51,7 +50,7 @@ func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockCh
 		newTxsEvent:  make(chan core.NewTxsEvent, 1024),
 
 		ctx:     ctx,
-		Sniffer: sniffer,
+		Sniffer: mamoru.NewSniffer(),
 	}
 	sb.headSub = sb.SubscribeChainHeadEvent(sb.newHeadEvent)
 	sb.TxSub = sb.SubscribeNewTxsEvent(sb.newTxsEvent)
@@ -95,7 +94,7 @@ func (bc *LightSnifferBackend) SnifferLoop() {
 }
 
 func (bc *LightSnifferBackend) processHead(ctx context.Context, head *types.Header) {
-	if bc.Sniffer == nil || !bc.Sniffer.IsSnifferEnable() || !bc.Sniffer.Connect() || ctx.Err() != nil {
+	if ctx.Err() != nil || !bc.Sniffer.CheckRequirements() {
 		return
 	}
 
