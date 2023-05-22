@@ -95,7 +95,7 @@ func (bc *LightSnifferBackend) SnifferLoop() {
 }
 
 func (bc *LightSnifferBackend) processHead(ctx context.Context, head *types.Header) {
-	if bc.Sniffer != nil || !bc.Sniffer.IsSnifferEnable() || !bc.Sniffer.Connect() || ctx.Err() != nil {
+	if bc.Sniffer == nil || !bc.Sniffer.IsSnifferEnable() || !bc.Sniffer.Connect() || ctx.Err() != nil {
 		return
 	}
 
@@ -104,6 +104,9 @@ func (bc *LightSnifferBackend) processHead(ctx context.Context, head *types.Head
 
 	// Create tracer context
 	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
+
+	// Set txpool context
+	tracer.SetTxpoolCtx()
 
 	parentBlock, err := bc.chain.GetBlockByHash(ctx, head.ParentHash)
 	if err != nil {
