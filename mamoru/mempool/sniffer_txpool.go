@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"context"
+	"math/big"
 	"sync"
 	"time"
 
@@ -129,7 +130,7 @@ func (bc *SnifferBackend) SnifferLoop() {
 }
 
 func (bc *SnifferBackend) process(ctx context.Context, block *types.Block, txs types.Transactions) {
-	if bc.sniffer != nil || !bc.sniffer.IsSnifferEnable() || !bc.sniffer.Connect() || ctx.Err() != nil {
+	if bc.sniffer == nil || !bc.sniffer.IsSnifferEnable() || !bc.sniffer.Connect() || ctx.Err() != nil {
 		return
 	}
 
@@ -138,6 +139,9 @@ func (bc *SnifferBackend) process(ctx context.Context, block *types.Block, txs t
 
 	// Create tracer context
 	tracer := mamoru.NewTracer(bc.feeder)
+
+	// Set txpool context
+	tracer.SetTxpoolCtx()
 
 	var receipts types.Receipts
 
@@ -180,6 +184,9 @@ func (bc *SnifferBackend) process(ctx context.Context, block *types.Block, txs t
 			break
 		}
 
+		// Clean receipt
+		cleanReceiptAndLogs(receipt)
+
 		receipts = append(receipts, receipt)
 
 		callFrames, err := calltracer.GetResult()
@@ -196,4 +203,13 @@ func (bc *SnifferBackend) process(ctx context.Context, block *types.Block, txs t
 	tracer.FeedTransactions(block.Number(), txs, receipts)
 	tracer.FeedEvents(receipts)
 	tracer.Send(startTime, block.Number(), block.Hash(), "txpool")
+}
+
+func cleanReceiptAndLogs(receipt *types.Receipt) {
+	receipt.BlockNumber = big.NewInt(0)
+	receipt.BlockHash = common.Hash{}
+	for _, l := range receipt.Logs {
+		l.BlockNumber = 0
+		l.BlockHash = common.Hash{}
+	}
 }
