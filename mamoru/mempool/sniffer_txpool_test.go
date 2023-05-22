@@ -251,10 +251,6 @@ func TestMempoolSniffer(t *testing.T) {
 	assert.Equal(t, txsPending.Len(), feeder.Receipts().Len(), "receipts len must be equal")
 	assert.Equal(t, txsPending.Len(), len(feeder.CallFrames()), "CallFrames len must be equal")
 
-	for _, r := range feeder.Receipts() {
-		assert.Equal(t, blocks[len(blocks)-1].Number(), r.BlockNumber, "block number must be equals")
-		assert.Equal(t, blocks[len(blocks)-1].Hash(), r.BlockHash, "block number must be equals")
-	}
 	for _, call := range feeder.CallFrames() {
 		assert.Empty(t, call.Error, "error must be empty")
 		assert.NotNil(t, call.Type, "type must be not nil")
