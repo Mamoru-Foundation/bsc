@@ -2,6 +2,7 @@ package mamoru
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -65,9 +66,14 @@ func (s *Sniffer) SetDownloader(downloader statusProgress) {
 }
 
 func (s *Sniffer) IsSnifferEnable() bool {
-	isEnable, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
+	val, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
+	isEnable, err := strconv.ParseBool(val)
+	if err != nil {
+		log.Error("Mamoru Sniffer env parse error", "err", err)
+		return false
+	}
 
-	return ok && isEnable == "true"
+	return ok && isEnable
 }
 
 func (s *Sniffer) Connect() bool {
