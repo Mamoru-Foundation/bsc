@@ -32,7 +32,7 @@ func NewSniffer() *Sniffer {
 
 var syncing bool
 
-func (s *Sniffer) CheckSynced() bool {
+func (s *Sniffer) checkSynced() bool {
 	if s.status == nil {
 		return false
 	}
@@ -48,7 +48,7 @@ func (s *Sniffer) CheckSynced() bool {
 		return true
 	}
 
-	if progress.CurrentBlock > 0 && progress.HighestBlock > 0 && syncing {
+	if progress.CurrentBlock > 0 && progress.HighestBlock > 0 {
 		log.Info("Mamoru Sniffer sync", "current", progress.CurrentBlock)
 		if int64(progress.HighestBlock)-int64(progress.CurrentBlock) <= 0 {
 			s.synced = true
@@ -65,7 +65,11 @@ func (s *Sniffer) SetDownloader(downloader statusProgress) {
 	s.status = downloader
 }
 
-func (s *Sniffer) IsSnifferEnable() bool {
+func (s *Sniffer) CheckRequirements() bool {
+	return s.isSnifferEnable() && s.connect() && s.checkSynced()
+}
+
+func (s *Sniffer) isSnifferEnable() bool {
 	val, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
 	isEnable, err := strconv.ParseBool(val)
 	if err != nil {
@@ -76,7 +80,7 @@ func (s *Sniffer) IsSnifferEnable() bool {
 	return ok && isEnable
 }
 
-func (s *Sniffer) Connect() bool {
+func (s *Sniffer) connect() bool {
 	if sniffer != nil {
 		return true
 	}

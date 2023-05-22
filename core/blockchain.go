@@ -296,9 +296,6 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 	diffLayerRLPCache, _ := lru.New(diffLayerRLPCacheLimit)
 	diffLayerChanCache, _ := lru.New(diffLayerCacheLimit)
 
-	// Create mamoru sniffer
-	sniffer := mamoru.NewSniffer()
-
 	bc := &BlockChain{
 		chainConfig: chainConfig,
 		cacheConfig: cacheConfig,
@@ -334,7 +331,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		diffPeersToDiffHashes: make(map[string]map[common.Hash]struct{}),
 
 		// mamoru sniffer
-		Sniffer: sniffer,
+		Sniffer: mamoru.NewSniffer(),
 	}
 
 	bc.prefetcher = NewStatePrefetcher(chainConfig, bc, engine)
@@ -1708,12 +1705,10 @@ func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, receipts []*types
 	}
 
 	////////////////////////////////////////////////////////////
-	if bc.Sniffer == nil || !bc.Sniffer.IsSnifferEnable() || !bc.Sniffer.Connect() {
+	if !bc.Sniffer.CheckRequirements() {
 		return status, nil
 	}
-	if !bc.Sniffer.CheckSynced() {
-		return status, nil
-	}
+
 	startTime := time.Now()
 	log.Info("Mamoru Blockchain Sniffer start", "number", block.NumberU64(), "ctx", "blockchain")
 	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
