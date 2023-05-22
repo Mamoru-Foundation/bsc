@@ -91,9 +91,6 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 	bodyRLPCache, _ := lru.New(bodyCacheLimit)
 	blockCache, _ := lru.New(blockCacheLimit)
 
-	// create mamoru sniffer
-	sniffer := mamoru.NewSniffer()
-
 	bc := &LightChain{
 		chainDb:       odr.Database(),
 		indexerConfig: odr.IndexerConfig(),
@@ -105,7 +102,7 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 		engine:        engine,
 
 		// mamoru sniffer
-		Sniffer: sniffer,
+		Sniffer: mamoru.NewSniffer(),
 	}
 	bc.forker = core.NewForkChoice(bc, nil)
 	var err error
@@ -479,11 +476,7 @@ func (lc *LightChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 	}
 	//return 0, err
 	////////////////////////////////////////////////////////////////////////////
-	if lc.Sniffer == nil || !lc.Sniffer.IsSnifferEnable() || !lc.Sniffer.Connect() {
-		return 0, nil
-	}
-
-	if !lc.Sniffer.CheckSynced() {
+	if !lc.Sniffer.CheckRequirements() {
 		return 0, nil
 	}
 
