@@ -28,7 +28,7 @@ type blockChain interface {
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 }
 
-type SnifferBackend struct {
+type TxPoolBackendSniffer struct {
 	txPool      BcTxPool
 	chain       blockChain
 	chainConfig *params.ChainConfig
@@ -49,8 +49,11 @@ type SnifferBackend struct {
 	sniffer *mamoru.Sniffer
 }
 
-func NewSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder) *SnifferBackend {
-	sb := &SnifferBackend{
+func NewTxPoolBackendSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder, mamoruSniffer *mamoru.Sniffer) *TxPoolBackendSniffer {
+	if mamoruSniffer == nil {
+		mamoruSniffer = mamoru.NewSniffer()
+	}
+	sb := &TxPoolBackendSniffer{
 		txPool:      txPool,
 		chain:       chain,
 		chainConfig: chainConfig,
@@ -65,29 +68,31 @@ func NewSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainCon
 		ctx: ctx,
 		mu:  sync.RWMutex{},
 
-		sniffer: mamoru.NewSniffer(),
+		sniffer: mamoruSniffer,
 	}
 	sb.TxSub = sb.SubscribeNewTxsEvent(sb.newTxsEvent)
 	sb.headSub = sb.SubscribeChainHeadEvent(sb.newHeadEvent)
 	sb.chEvSub = sb.SubscribeChainEvent(sb.chEv)
 
+	go sb.SnifferLoop()
+
 	return sb
 }
 
-func (bc *SnifferBackend) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
+func (bc *TxPoolBackendSniffer) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
 	return bc.txPool.SubscribeNewTxsEvent(ch)
 }
 
 // SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
-func (bc *SnifferBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
+func (bc *TxPoolBackendSniffer) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
 	return bc.chain.SubscribeChainHeadEvent(ch)
 }
 
-func (bc *SnifferBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
+func (bc *TxPoolBackendSniffer) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	return bc.chain.SubscribeChainEvent(ch)
 }
 
-func (bc *SnifferBackend) SnifferLoop() {
+func (bc *TxPoolBackendSniffer) SnifferLoop() {
 	defer func() {
 		bc.TxSub.Unsubscribe()
 		bc.headSub.Unsubscribe()
@@ -128,7 +133,7 @@ func (bc *SnifferBackend) SnifferLoop() {
 	}
 }
 
-func (bc *SnifferBackend) process(ctx context.Context, block *types.Block, txs types.Transactions) {
+func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block, txs types.Transactions) {
 	if ctx.Err() != nil || !bc.sniffer.CheckRequirements() {
 		return
 	}
