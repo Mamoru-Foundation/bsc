@@ -155,6 +155,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*LightEthereum, error) {
 	leth.txPool = light.NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
 
 	////////////////////////////////////////////////////////
+	// Setup Mamoru TxPool light sniffer
 	mempool.NewLightSniffer(context.Background(), leth.txPool, leth.blockchain, chainConfig)
 	////////////////////////////////////////////////////////
 	// Set up checkpoint oracle.
@@ -187,9 +188,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*LightEthereum, error) {
 		log.Warn("Ultra light client is enabled", "trustedNodes", len(leth.handler.ulc.keys), "minTrustedFraction", leth.handler.ulc.fraction)
 		leth.blockchain.DisableCheckFreq()
 	}
-
+	////////////////////////////////////////////////////////
 	//Mamoru Sniffer set downloader for sync progress check
 	leth.blockchain.Sniffer.SetDownloader(leth.handler.downloader)
+	////////////////////////////////////////////////////////
 
 	leth.netRPCService = ethapi.NewPublicNetAPI(leth.p2pServer, leth.config.NetworkId)
 

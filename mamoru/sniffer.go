@@ -30,8 +30,6 @@ func NewSniffer() *Sniffer {
 	return &Sniffer{}
 }
 
-var syncing bool
-
 func (s *Sniffer) checkSynced() bool {
 	if s.status == nil {
 		return false
@@ -53,7 +51,7 @@ func (s *Sniffer) checkSynced() bool {
 		if int64(progress.HighestBlock)-int64(progress.CurrentBlock) <= 0 {
 			s.synced = true
 		}
-		return true
+		return s.synced
 	}
 
 	return false
@@ -66,10 +64,10 @@ func (s *Sniffer) SetDownloader(downloader statusProgress) {
 }
 
 func (s *Sniffer) CheckRequirements() bool {
-	return s.isSnifferEnable() && s.connect() && s.checkSynced()
+	return isSnifferEnable() && s.checkSynced() && connect()
 }
 
-func (s *Sniffer) isSnifferEnable() bool {
+func isSnifferEnable() bool {
 	val, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
 	isEnable, err := strconv.ParseBool(val)
 	if err != nil {
@@ -80,19 +78,16 @@ func (s *Sniffer) isSnifferEnable() bool {
 	return ok && isEnable
 }
 
-func (s *Sniffer) connect() bool {
+func connect() bool {
 	if sniffer != nil {
 		return true
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	var err error
 	if sniffer == nil {
 		sniffer, err = SnifferConnectFunc()
 		if err != nil {
 			erst := strings.Replace(err.Error(), "\t", "", -1)
 			erst = strings.Replace(erst, "\n", "", -1)
-			//	erst = strings.Replace(erst, " ", "", -1)
 			log.Error("Mamoru Sniffer connect", "err", erst)
 			return false
 		}
