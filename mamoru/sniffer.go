@@ -2,9 +2,12 @@ package mamoru
 
 import (
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum"
@@ -93,4 +96,22 @@ func connect() bool {
 		}
 	}
 	return true
+}
+
+func disconnect() {
+	ticker := time.NewTicker(1 * time.Minute)
+	sigs := make(chan os.Signal, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for {
+			select {
+			case <-sigs:
+				return
+			case <-ticker.C:
+				sniffer = nil
+				log.Error("Mamoru Sniffer disconnect", "disconnect", "by timeout")
+			}
+		}
+	}()
 }

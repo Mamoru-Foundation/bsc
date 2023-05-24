@@ -156,7 +156,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*LightEthereum, error) {
 
 	////////////////////////////////////////////////////////
 	// Setup Mamoru TxPool light sniffer
-	mempool.NewLightSniffer(context.Background(), leth.txPool, leth.blockchain, chainConfig)
+	mempool.NewLightSniffer(context.Background(), leth.txPool, leth.blockchain, chainConfig, leth.blockchain.Sniffer)
 	////////////////////////////////////////////////////////
 	// Set up checkpoint oracle.
 	leth.oracle = leth.setupOracle(stack, genesisHash, config)

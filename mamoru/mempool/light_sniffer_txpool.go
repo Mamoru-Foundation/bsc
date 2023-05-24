@@ -25,7 +25,7 @@ type lightBlockChain interface {
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 }
 
-type LightSnifferBackend struct {
+type TxPoolLightSniffer struct {
 	txPool      LightTxPool
 	chain       lightBlockChain
 	chainConfig *params.ChainConfig
@@ -38,11 +38,14 @@ type LightSnifferBackend struct {
 
 	ctx context.Context
 
-	Sniffer *mamoru.Sniffer
+	sniffer *mamoru.Sniffer
 }
 
-func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockChain, chainConfig *params.ChainConfig) *LightSnifferBackend {
-	sb := &LightSnifferBackend{
+func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockChain, chainConfig *params.ChainConfig, mamoruSniffer *mamoru.Sniffer) *TxPoolLightSniffer {
+	if mamoruSniffer == nil {
+		mamoruSniffer = mamoru.NewSniffer()
+	}
+	sb := &TxPoolLightSniffer{
 		txPool:       txPool,
 		chain:        chain,
 		chainConfig:  chainConfig,
@@ -50,7 +53,7 @@ func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockCh
 		newTxsEvent:  make(chan core.NewTxsEvent, 1024),
 
 		ctx:     ctx,
-		Sniffer: mamoru.NewSniffer(),
+		sniffer: mamoruSniffer,
 	}
 	sb.headSub = sb.SubscribeChainHeadEvent(sb.newHeadEvent)
 	sb.TxSub = sb.SubscribeNewTxsEvent(sb.newTxsEvent)
@@ -60,16 +63,16 @@ func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockCh
 	return sb
 }
 
-func (bc *LightSnifferBackend) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
+func (bc *TxPoolLightSniffer) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
 	return bc.txPool.SubscribeNewTxsEvent(ch)
 }
 
 // SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
-func (bc *LightSnifferBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
+func (bc *TxPoolLightSniffer) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
 	return bc.chain.SubscribeChainHeadEvent(ch)
 }
 
-func (bc *LightSnifferBackend) SnifferLoop() {
+func (bc *TxPoolLightSniffer) SnifferLoop() {
 	ctx, cancel := context.WithCancel(bc.ctx)
 
 	defer func() {
@@ -93,8 +96,11 @@ func (bc *LightSnifferBackend) SnifferLoop() {
 	}
 }
 
-func (bc *LightSnifferBackend) processHead(ctx context.Context, head *types.Header) {
-	if ctx.Err() != nil || !bc.Sniffer.CheckRequirements() {
+func (bc *TxPoolLightSniffer) processHead(ctx context.Context, head *types.Header) {
+	if ctx.Err() != nil {
+		return
+	}
+	if !bc.sniffer.CheckRequirements() {
 		return
 	}
 
