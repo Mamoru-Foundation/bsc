@@ -279,7 +279,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}
 
 	////////////////////////////////////////////////////////
-	mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig), eth.blockchain.Sniffer)
+	mempool.NewTxPoolBackendSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig), eth.blockchain.Sniffer)
 
 	////////////////////////////////////////////////////////
 

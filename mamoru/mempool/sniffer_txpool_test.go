@@ -161,7 +161,7 @@ func (f *testFeeder) CallFrames() []*mamoru.CallFrame {
 }
 
 func transaction(nonce uint64, gaslimit uint64, key *ecdsa.PrivateKey) *types.Transaction {
-	return pricedTransaction(nonce, gaslimit, big.NewInt(765625000), key)
+	return pricedTransaction(nonce, gaslimit, big.NewInt(875000000), key)
 }
 
 func pricedTransaction(nonce uint64, gaslimit uint64, gasprice *big.Int, key *ecdsa.PrivateKey) *types.Transaction {
@@ -227,7 +227,7 @@ func TestMempoolSniffer(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	feeder := &testFeeder{}
-	memSniffer := NewSniffer(ctx, pool, bChain, params.TestChainConfig, feeder)
+	memSniffer := NewTxPoolBackendSniffer(ctx, pool, bChain, params.TestChainConfig, feeder, nil)
 
 	memSniffer.sniffer.SetDownloader(&statusProgressMock{})
 
@@ -243,7 +243,7 @@ func TestMempoolSniffer(t *testing.T) {
 	_, _ = bChain.InsertChain(blocks)
 	pool.AddRemotesSync(append(txsPending, txsQueued...))
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 	cancelCtx()
 
 	if err := validateEvents(newTxsEvent, 2); err != nil {

@@ -49,7 +49,7 @@ type TxPoolBackendSniffer struct {
 	sniffer *mamoru.Sniffer
 }
 
-func NewSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder, mamoruSniffer *mamoru.Sniffer) *TxPoolBackendSniffer {
+func NewTxPoolBackendSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder, mamoruSniffer *mamoru.Sniffer) *TxPoolBackendSniffer {
 	if mamoruSniffer == nil {
 		mamoruSniffer = mamoru.NewSniffer()
 	}
