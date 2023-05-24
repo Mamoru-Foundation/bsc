@@ -254,9 +254,8 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	eth.txPool = core.NewTxPool(config.TxPool, chainConfig, eth.blockchain)
 
 	////////////////////////////////////////////////////////
-	sniffer := mempool.NewSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig))
+	mempool.NewTxPoolBackendSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig, mamoru.NewFeed(chainConfig), eth.blockchain.Sniffer)
 
-	go sniffer.SnifferLoop()
 	////////////////////////////////////////////////////////
 
 	// Permit the downloader to use the trie cache allowance during fast sync
