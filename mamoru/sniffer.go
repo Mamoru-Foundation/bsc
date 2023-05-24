@@ -2,9 +2,12 @@ package mamoru
 
 import (
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum"
@@ -30,8 +33,6 @@ func NewSniffer() *Sniffer {
 	return &Sniffer{}
 }
 
-var syncing bool
-
 func (s *Sniffer) checkSynced() bool {
 	if s.status == nil {
 		return false
@@ -53,7 +54,7 @@ func (s *Sniffer) checkSynced() bool {
 		if int64(progress.HighestBlock)-int64(progress.CurrentBlock) <= 0 {
 			s.synced = true
 		}
-		return true
+		return s.synced
 	}
 
 	return false
@@ -66,10 +67,10 @@ func (s *Sniffer) SetDownloader(downloader statusProgress) {
 }
 
 func (s *Sniffer) CheckRequirements() bool {
-	return s.isSnifferEnable() && s.connect() && s.checkSynced()
+	return isSnifferEnable() && s.checkSynced() && connect()
 }
 
-func (s *Sniffer) isSnifferEnable() bool {
+func isSnifferEnable() bool {
 	val, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
 	isEnable, err := strconv.ParseBool(val)
 	if err != nil {
@@ -80,22 +81,37 @@ func (s *Sniffer) isSnifferEnable() bool {
 	return ok && isEnable
 }
 
-func (s *Sniffer) connect() bool {
+func connect() bool {
 	if sniffer != nil {
 		return true
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	var err error
 	if sniffer == nil {
 		sniffer, err = SnifferConnectFunc()
 		if err != nil {
 			erst := strings.Replace(err.Error(), "\t", "", -1)
 			erst = strings.Replace(erst, "\n", "", -1)
-			//	erst = strings.Replace(erst, " ", "", -1)
 			log.Error("Mamoru Sniffer connect", "err", erst)
 			return false
 		}
 	}
 	return true
+}
+
+func disconnect() {
+	ticker := time.NewTicker(1 * time.Minute)
+	sigs := make(chan os.Signal, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for {
+			select {
+			case <-sigs:
+				return
+			case <-ticker.C:
+				sniffer = nil
+				log.Error("Mamoru Sniffer disconnect", "disconnect", "by timeout")
+			}
+		}
+	}()
 }
