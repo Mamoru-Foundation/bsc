@@ -504,7 +504,7 @@ func (lc *LightChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 	tracer.FeedEvents(receipts)
 
 	//Launch EVM and Collect Call Trace data
-	callFrames, err := call_tracer.TraceBlock(ctx, call_tracer.NewTracerConfig(stateDb.Copy(), lc.Config(), lc), lastBlock)
+	callFrames, err := call_tracer.TraceBlock(ctx, call_tracer.NewTracerConfig(stateDb, lc.Config(), lc), lastBlock)
 	if err != nil {
 		log.Error("Mamoru Sniffer Tracer Error", "err", err, "ctx", "lightchain")
 		return 0, err

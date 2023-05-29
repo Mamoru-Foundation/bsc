@@ -107,7 +107,8 @@ func TraceBlock(ctx context.Context,
 	for i, tx := range txs {
 		// Send the trace task over for execution
 		jobs <- &txTraceTask{statedb: stateDB.Copy(), index: i}
-
+		// Generate the next state snapshot fast without tracing
+		msg, _ := tx.AsMessage(signer, block.BaseFee())
 		if posa, ok := config.engin.(consensus.PoSA); ok {
 			if isSystem, _ := posa.IsSystemTransaction(tx, block.Header()); isSystem {
 				balance := stateDB.GetBalance(consensus.SystemAddress)
@@ -117,8 +118,7 @@ func TraceBlock(ctx context.Context,
 				}
 			}
 		}
-		// Generate the next state snapshot fast without tracing
-		msg, _ := tx.AsMessage(signer, block.BaseFee())
+
 		stateDB.Prepare(tx.Hash(), i)
 		from, _ := types.Sender(types.LatestSigner(config.chainConfig), tx)
 		if tx.Nonce() > stateDB.GetNonce(from) {
