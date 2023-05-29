@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"math/big"
 	"runtime"
 	"sync"
@@ -73,7 +72,6 @@ func TraceBlock(ctx context.Context,
 		blockHash      = block.Hash()
 		pend           = new(sync.WaitGroup)
 		jobs           = make(chan *txTraceTask, len(txs))
-		blockCtx       = core.NewEVMBlockContext(block.Header(), config.chainContext, nil)
 		defaultPool, _ = ants.NewPool(ants.DefaultAntsPoolSize, ants.WithExpiryDuration(10*time.Second))
 	)
 	threads := runtime.NumCPU()
@@ -85,6 +83,7 @@ func TraceBlock(ctx context.Context,
 		pend.Add(1)
 		_ = defaultPool.Submit(func() {
 			defer pend.Done()
+			blockCtx := core.NewEVMBlockContext(block.Header(), config.chainContext, nil)
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
 				msg, _ := txs[task.index].AsMessage(signer, block.BaseFee())
@@ -104,7 +103,7 @@ func TraceBlock(ctx context.Context,
 	}
 	// EthFeed the transactions into the tracers and return
 	var failed error
-	//blockCtx := core.NewEVMBlockContext(block.Header(), config.chainContext, nil)
+	blockCtx := core.NewEVMBlockContext(block.Header(), config.chainContext, nil)
 	for i, tx := range txs {
 		// Send the trace task over for execution
 		jobs <- &txTraceTask{statedb: stateDB.Copy(), index: i}
@@ -121,6 +120,11 @@ func TraceBlock(ctx context.Context,
 		// Generate the next state snapshot fast without tracing
 		msg, _ := tx.AsMessage(signer, block.BaseFee())
 		stateDB.Prepare(tx.Hash(), i)
+		from, _ := types.Sender(types.LatestSigner(config.chainConfig), tx)
+		if tx.Nonce() > stateDB.GetNonce(from) {
+			stateDB.SetNonce(from, tx.Nonce())
+		}
+
 		vmenv := vm.NewEVM(blockCtx, core.NewEVMTxContext(msg), stateDB, config.chainConfig, vm.Config{})
 		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas())); err != nil {
 			failed = err
