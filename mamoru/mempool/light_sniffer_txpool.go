@@ -128,7 +128,7 @@ func (bc *TxPoolLightSniffer) processHead(ctx context.Context, head *types.Heade
 	}
 	tracer.FeedBlock(newBlock)
 
-	callFrames, err := call_tracer.TraceBlock(ctx, call_tracer.NewTracerConfig(stateDb.Copy(), bc.chainConfig, bc.chain), newBlock)
+	callFrames, err := call_tracer.TraceBlock(ctx, call_tracer.NewTracerConfig(stateDb, bc.chainConfig, bc.chain), newBlock)
 	if err != nil {
 		log.Error("Mamoru block trace", "number", head.Number.Uint64(), "err", err, "ctx", "lighttxpool")
 		return
