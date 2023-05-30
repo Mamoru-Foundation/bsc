@@ -201,13 +201,8 @@ func (bc *TxPoolLightSniffer) processHead(ctx context.Context, head *types.Heade
 	// Set txpool context
 	tracer.SetTxpoolCtx()
 
-	parentBlock, err := bc.chain.GetBlockByHash(ctx, head.ParentHash)
-	if err != nil {
-		log.Error("Mamoru parent block", "number", head.Number.Uint64(), "err", err, "ctx", "lighttxpool")
-		return
-	}
-
-	stateDb := light.NewState(ctx, parentBlock.Header(), bc.chain.Odr())
+	// Create call tracer
+	stateDb := light.NewState(ctx, head, bc.chain.Odr())
 
 	newBlock, err := bc.chain.GetBlockByHash(ctx, head.Hash())
 	if err != nil {
