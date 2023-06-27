@@ -35,11 +35,11 @@ ENV PACKAGES ca-certificates jq unzip\
   bash tini \
   grep curl sed gcc
 
-RUN apt-get update && apt-get install -y $PACKAGES
-RUN addgroup --gid ${BSC_USER_GID} ${BSC_USER}
-RUN adduser -u ${BSC_USER_UID} --gid ${BSC_USER_GID} ${BSC_USER} --shell /sbin/nologin
-RUN sed -i -e "s/bin\/sh/bin\/bash/" /etc/passwd
-RUN apt-get clean
+RUN apt-get update && apt-get install -y $PACKAGES \
+    && addgroup --gid ${BSC_USER_GID} ${BSC_USER} \
+    &&  adduser -u ${BSC_USER_UID} --gid ${BSC_USER_GID} ${BSC_USER} --shell /sbin/nologin \
+    &&  sed -i -e "s/bin\/sh/bin\/bash/" /etc/passwd \
+    && apt-get clean
 
 RUN mkdir -p /etc/bash && echo "[ ! -z \"\$TERM\" -a -r /etc/motd ] && cat /etc/motd" >> /etc/bash/bashrc
 
