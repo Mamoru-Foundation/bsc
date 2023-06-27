@@ -21,7 +21,7 @@ ENV CGO_CFLAGS_ALLOW="-O -D__BLST_PORTABLE__"
 RUN cd /go-ethereum && go run build/ci.go install ./cmd/geth
 
 # Pull Geth into a second stage deploy alpine container
-FROM debian:bullseye-slim
+FROM debian:12
 
 ARG BSC_USER=bsc
 ARG BSC_USER_UID=1000
