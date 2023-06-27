@@ -281,4 +281,4 @@ replace (
 
 replace github.com/tendermint/tendermint => github.com/bnb-chain/tendermint v0.31.15
 
-require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.4.0
+require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.5.1
