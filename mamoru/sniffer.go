@@ -1,17 +1,13 @@
 package mamoru
 
 import (
-	"os"
-	"os/signal"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
-
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/log"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 var (
@@ -34,8 +30,9 @@ func NewSniffer() *Sniffer {
 }
 
 func (s *Sniffer) checkSynced() bool {
+	// if status is nil, it means that the node is synced
 	if s.status == nil {
-		return false
+		return true
 	}
 
 	progress := s.status.Progress()
@@ -72,6 +69,9 @@ func (s *Sniffer) CheckRequirements() bool {
 
 func isSnifferEnable() bool {
 	val, ok := os.LookupEnv("MAMORU_SNIFFER_ENABLE")
+	if !ok {
+		return false
+	}
 	isEnable, err := strconv.ParseBool(val)
 	if err != nil {
 		log.Error("Mamoru Sniffer env parse error", "err", err)
@@ -96,22 +96,4 @@ func connect() bool {
 		}
 	}
 	return true
-}
-
-func disconnect() {
-	ticker := time.NewTicker(1 * time.Minute)
-	sigs := make(chan os.Signal, 1)
-
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		for {
-			select {
-			case <-sigs:
-				return
-			case <-ticker.C:
-				sniffer = nil
-				log.Error("Mamoru Sniffer disconnect", "disconnect", "by timeout")
-			}
-		}
-	}()
 }
