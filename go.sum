@@ -83,6 +83,8 @@ github.com/Mamoru-Foundation/mamoru-sniffer-go v0.4.0 h1:xeUx+zm5NvXE7lVlApFxpq3
 github.com/Mamoru-Foundation/mamoru-sniffer-go v0.4.0/go.mod h1:hnmSj2y/1Ddi4I5tyXVyMPIHslvfNZARuLpbVKwr32s=
 github.com/Mamoru-Foundation/mamoru-sniffer-go v0.5.1 h1:51Kda2A3PNUH7KYQ3SA9OEUBKlJj40rODiVh0VR3d74=
 github.com/Mamoru-Foundation/mamoru-sniffer-go v0.5.1/go.mod h1:hnmSj2y/1Ddi4I5tyXVyMPIHslvfNZARuLpbVKwr32s=
+github.com/Mamoru-Foundation/mamoru-sniffer-go v0.5.2 h1:DIwKTQ22MV4eZMYC5pSqDbSBZf19BhJ2VR9tM54BP6k=
+github.com/Mamoru-Foundation/mamoru-sniffer-go v0.5.2/go.mod h1:hnmSj2y/1Ddi4I5tyXVyMPIHslvfNZARuLpbVKwr32s=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
