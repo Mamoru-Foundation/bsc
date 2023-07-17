@@ -1704,30 +1704,6 @@ func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, receipts []*types
 		bc.chainSideFeed.Send(ChainSideEvent{Block: block})
 	}
 
-	////////////////////////////////////////////////////////////
-	if !bc.Sniffer.CheckRequirements() {
-		return status, nil
-	}
-
-	startTime := time.Now()
-	log.Info("Mamoru Blockchain Sniffer start", "number", block.NumberU64(), "ctx", "blockchain")
-	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
-	tracer.FeedBlock(block)
-	tracer.FeedTransactions(block.Number(), block.Transactions(), receipts)
-	tracer.FeedEvents(receipts)
-	// Collect Call Trace data  from EVM
-	if callTracer, ok := bc.GetVMConfig().Tracer.(*mamoru.CallTracer); ok {
-		result, err := callTracer.GetResult()
-		if err != nil {
-			log.Error("Mamoru Tracer", "err", err, "ctx", "blockchain")
-			return 0, err
-		}
-		tracer.FeedCalTraces(result, block.NumberU64())
-	}
-
-	tracer.Send(startTime, block.Number(), block.Hash(), "blockchain")
-
-	////////////////////////////////////////////////////////////
 	return status, nil
 }
 
@@ -2013,6 +1989,28 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 			statedb.StopPrefetcher()
 			return it.index, err
 		}
+		log.Info("Mamoru Blockchain Sniffer", "place", "insertChain", "number", block.NumberU64(), "ctx", "blockchain")
+		////////////////////////////////////////////////////////////
+		if bc.Sniffer.CheckRequirements() {
+			startTime := time.Now()
+			log.Info("Mamoru Blockchain Sniffer start", "number", block.NumberU64(), "ctx", "blockchain")
+			tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
+			tracer.FeedBlock(block)
+			tracer.FeedTransactions(block.Number(), block.Transactions(), receipts)
+			tracer.FeedEvents(receipts)
+			// Collect Call Trace data  from EVM
+			if callTracer, ok := bc.GetVMConfig().Tracer.(*mamoru.CallTracer); ok {
+				result, err := callTracer.GetResult()
+				if err != nil {
+					log.Error("Mamoru Tracer", "err", err, "ctx", "blockchain")
+				}
+				tracer.FeedCalTraces(result, block.NumberU64())
+			}
+
+			tracer.Send(startTime, block.Number(), block.Hash(), "blockchain")
+		}
+		////////////////////////////////////////////////////////////
+
 		// Update the metrics touched during block processing
 		accountReadTimer.Update(statedb.AccountReads)                 // Account reads are complete, we can mark them
 		storageReadTimer.Update(statedb.StorageReads)                 // Storage reads are complete, we can mark them
