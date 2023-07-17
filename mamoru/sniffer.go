@@ -1,13 +1,14 @@
 package mamoru
 
 import (
-	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
