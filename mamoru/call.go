@@ -130,6 +130,10 @@ func (t *CallTracer) GetResult() ([]*CallFrame, error) {
 		frames = append(frames, &rcall)
 	}
 
+	t.callstack = []CallFrame{{}}
+	atomic.StoreUint32(&t.interrupt, 0)
+	t.reason = nil
+
 	return frames, t.reason
 }
 
