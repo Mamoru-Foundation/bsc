@@ -193,7 +193,7 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 
 		receipts = append(receipts, receipt)
 
-		callFrames, err := calltracer.GetResult()
+		callFrames, err := calltracer.TakeResult()
 		if err != nil {
 			log.Error("Mamoru tracer result", "err", err, "number", block.NumberU64(),
 				"ctx", "txpool")

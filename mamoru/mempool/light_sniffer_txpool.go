@@ -164,7 +164,7 @@ func (bc *TxPoolLightSniffer) processTxs(ctx context.Context, txs types.Transact
 
 		receipts = append(receipts, receipt)
 
-		callFrames, err := calltracer.GetResult()
+		callFrames, err := calltracer.TakeResult()
 		if err != nil {
 			log.Error("Mamoru tracer result", "err", err, "number", head.Number.Uint64(),
 				"ctx", "lighttxpool")

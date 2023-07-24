@@ -121,9 +121,9 @@ func (*CallTracer) CaptureTxStart(uint64) {}
 
 func (*CallTracer) CaptureTxEnd(uint64) {}
 
-// GetResult returns the json-encoded nested list of call traces, and any
+// TakeResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
-func (t *CallTracer) GetResult() ([]*CallFrame, error) {
+func (t *CallTracer) TakeResult() ([]*CallFrame, error) {
 	var frames []*CallFrame
 	for _, call := range t.callstack {
 		rcall := call

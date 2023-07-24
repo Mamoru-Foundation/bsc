@@ -2000,11 +2000,22 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 			tracer.FeedEvents(receipts)
 			// Collect Call Trace data  from EVM
 			if callTracer, ok := bc.GetVMConfig().Tracer.(*mamoru.CallTracer); ok {
-				result, err := callTracer.GetResult()
+				callFrames, err := callTracer.TakeResult()
 				if err != nil {
-					log.Error("Mamoru Tracer", "err", err, "ctx", "blockchain")
+					log.Error("Mamoru Sniffer Tracer Error", "err", err, "ctx", "blockchain")
+					//return it.index, err
+				} else {
+					var bytesLength int
+					for i := 0; i < len(callFrames); i++ {
+						bytesLength += len(callFrames[i].Input)
+					}
+
+					log.Info("Mamoru finish collected", "number", block.NumberU64(), "txs", block.Transactions().Len(),
+						"receipts", len(receipts), "callFrames", len(callFrames), "callFrames.input.len", bytesLength, "ctx", "blockchain")
+
+					tracer.FeedCalTraces(callFrames, block.NumberU64())
 				}
-				tracer.FeedCalTraces(result, block.NumberU64())
+
 			}
 
 			tracer.Send(startTime, block.Number(), block.Hash(), "blockchain")
