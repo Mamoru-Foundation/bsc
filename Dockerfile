@@ -31,31 +31,39 @@ ENV BSC_HOME=/bsc
 ENV HOME=${BSC_HOME}
 ENV DATA_DIR=/data
 
+
+COPY docker/cron/cron.conf /etc/cron.d/cron.conf
+COPY docker/cron/prune.sh /prune.sh
+COPY docker/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Install Supervisor and create the Unix socket
+RUN touch /var/run/supervisor.sock
+
 ENV PACKAGES ca-certificates jq unzip\
-  bash tini \
+  bash tini cron supervisor \
   grep curl sed gcc
 
 RUN apt-get update && apt-get install -y $PACKAGES \
-    && addgroup --gid ${BSC_USER_GID} ${BSC_USER} \
-    &&  adduser -u ${BSC_USER_UID} --gid ${BSC_USER_GID} ${BSC_USER} --shell /sbin/nologin \
-    &&  sed -i -e "s/bin\/sh/bin\/bash/" /etc/passwd \
-    && apt-get clean
+  #  && addgroup --gid ${BSC_USER_GID} ${BSC_USER} \
+  #  &&  adduser -u ${BSC_USER_UID} --gid ${BSC_USER_GID} ${BSC_USER} --shell /sbin/nologin \
+  #  &&  sed -i -e "s/bin\/sh/bin\/bash/" /etc/passwd \
+    && apt-get clean \
+    && crontab /etc/cron.d/cron.conf
 
-RUN mkdir -p /etc/bash && echo "[ ! -z \"\$TERM\" -a -r /etc/motd ] && cat /etc/motd" >> /etc/bash/bashrc
+#RUN mkdir -p /etc/bash && echo "[ ! -z \"\$TERM\" -a -r /etc/motd ] && cat /etc/motd" >> /etc/bash/bashrc
 
-WORKDIR ${BSC_HOME}
+#WORKDIR ${BSC_HOME}
 
 COPY --from=builder /go-ethereum/build/bin/geth /usr/local/bin/
 
 COPY docker-entrypoint.sh ./
 
 RUN chmod +x docker-entrypoint.sh \
-    && mkdir -p ${DATA_DIR} \
-    && chown -R ${BSC_USER_UID}:${BSC_USER_GID} ${BSC_HOME} ${DATA_DIR}
+    && mkdir -p ${DATA_DIR}
+   # && chown -R ${BSC_USER_UID}:${BSC_USER_GID} ${BSC_HOME} ${DATA_DIR}
 
-VOLUME ${DATA_DIR}
+#VOLUME ${DATA_DIR}
 
-USER ${BSC_USER_UID}:${BSC_USER_GID}
+#USER ${BSC_USER_UID}:${BSC_USER_GID}
 
 # rpc ws graphql
 EXPOSE 8545 8546 8547 30303 30303/udp
