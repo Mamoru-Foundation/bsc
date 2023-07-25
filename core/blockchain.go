@@ -341,15 +341,6 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 
 	var err error
 
-	//////////////////////////////////////////////////////////////
-	callTracer, err := mamoru.NewCallTracer(true)
-	if err != nil {
-		return nil, err
-	}
-	bc.vmConfig.Tracer = callTracer
-	bc.vmConfig.Debug = true
-	//////////////////////////////////////////////////////////////
-
 	bc.hc, err = NewHeaderChain(db, chainConfig, engine, bc.insertStopped)
 	if err != nil {
 		return nil, err
@@ -1982,6 +1973,13 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 			statedb.EnablePipeCommit()
 		}
 		statedb.SetExpectedStateRoot(block.Root())
+		//////////////////////////////////////////////////////////////
+		if bc.Sniffer.CheckRequirements() {
+			callTracer, _ := mamoru.NewCallTracer(true)
+			bc.vmConfig.Tracer = callTracer
+			bc.vmConfig.Debug = true
+		}
+		//////////////////////////////////////////////////////////////
 		statedb, receipts, logs, usedGas, err := bc.processor.Process(block, statedb, bc.vmConfig)
 		close(interruptCh) // state prefetch can be stopped
 		if err != nil {
