@@ -1975,7 +1975,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 		statedb.SetExpectedStateRoot(block.Root())
 		//////////////////////////////////////////////////////////////
 		if bc.Sniffer.CheckRequirements() {
-			callTracer, _ := mamoru.NewCallTracer(true)
+			callTracer, _ := mamoru.NewCallTracer(false)
 			bc.vmConfig.Tracer = callTracer
 			bc.vmConfig.Debug = true
 		}
