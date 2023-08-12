@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/mamoru"
 	"github.com/ethereum/go-ethereum/params"
+
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 type blockChain interface {
@@ -51,7 +53,7 @@ type TxPoolBackendSniffer struct {
 
 func NewTxPoolBackendSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder, mamoruSniffer *mamoru.Sniffer) *TxPoolBackendSniffer {
 	if mamoruSniffer == nil {
-		mamoruSniffer = mamoru.NewSniffer()
+		mamoruSniffer = mamoru.NewSniffer(stats.NewStatsTxpool())
 	}
 	sb := &TxPoolBackendSniffer{
 		txPool:      txPool,
@@ -137,6 +139,7 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 	if ctx.Err() != nil || !bc.sniffer.CheckRequirements() {
 		return
 	}
+	lcStats := bc.sniffer.GetLightchainStats()
 
 	log.Info("Mamoru TxPool Sniffer start", "txs", txs.Len(), "number", block.NumberU64(), "ctx", "txpool")
 	startTime := time.Now()
@@ -201,12 +204,19 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 		}
 
 		tracer.FeedCalTraces(callFrames, block.NumberU64())
+		lcStats.AddedCallTraces(uint64(len(callFrames)))
 	}
 
 	//tracer.FeedBlock(block)
 	tracer.FeedTransactions(block.Number(), txs, receipts)
 	tracer.FeedEvents(receipts)
 	tracer.Send(startTime, block.Number(), block.Hash(), "txpool")
+
+	lcStats.IncrementBlocks()
+	lcStats.AddedTxs(uint64(block.Transactions().Len()))
+	lcStats.AddedEvents(uint64(len(receipts)))
+	lcStats.GetBlocks()
+	log.Info("Mamoru Stats", "blocks", lcStats.GetBlocks(), "txs", lcStats.GetTxs(), "events", lcStats.GetEvents(), "callTraces", lcStats.GetTraces(), "ctx", "txpool")
 }
 
 func cleanReceiptAndLogs(receipt *types.Receipt) {

@@ -102,7 +102,7 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 		engine:        engine,
 
 		// mamoru sniffer
-		Sniffer: mamoru.NewSniffer(),
+		Sniffer: mamoru.NewSniffer(nil),
 	}
 	bc.forker = core.NewForkChoice(bc, nil)
 	var err error
