@@ -45,7 +45,7 @@ type TxPoolLightSniffer struct {
 
 func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockChain, chainConfig *params.ChainConfig, mamoruSniffer *mamoru.Sniffer) *TxPoolLightSniffer {
 	if mamoruSniffer == nil {
-		mamoruSniffer = mamoru.NewSniffer()
+		mamoruSniffer = mamoru.NewSniffer(nil)
 	}
 	sb := &TxPoolLightSniffer{
 		txPool:       txPool,

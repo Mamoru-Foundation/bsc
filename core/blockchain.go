@@ -50,6 +50,7 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 
 	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 var (
@@ -331,7 +332,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		diffPeersToDiffHashes: make(map[string]map[common.Hash]struct{}),
 
 		// mamoru sniffer
-		Sniffer: mamoru.NewSniffer(),
+		Sniffer: mamoru.NewSniffer(stats.NewStatsBlockchain()),
 	}
 
 	bc.prefetcher = NewStatePrefetcher(chainConfig, bc, engine)
@@ -1990,6 +1991,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 		log.Info("Mamoru Blockchain Sniffer", "place", "insertChain", "number", block.NumberU64(), "ctx", "blockchain")
 		////////////////////////////////////////////////////////////
 		if bc.Sniffer.CheckRequirements() {
+			bcStats := bc.Sniffer.GetBlockchainStats()
 			startTime := time.Now()
 			log.Info("Mamoru Blockchain Sniffer start", "number", block.NumberU64(), "ctx", "blockchain")
 			tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
@@ -2012,11 +2014,17 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 						"receipts", len(receipts), "callFrames", len(callFrames), "callFrames.input.len", bytesLength, "ctx", "blockchain")
 
 					tracer.FeedCalTraces(callFrames, block.NumberU64())
+					bcStats.AddedCallTraces(uint64(len(callFrames)))
 				}
 
 			}
 
 			tracer.Send(startTime, block.Number(), block.Hash(), "blockchain")
+
+			bcStats.IncrementBlocks()
+			bcStats.AddedTxs(uint64(block.Transactions().Len()))
+			bcStats.AddedEvents(uint64(len(receipts)))
+			log.Info("Mamoru Stats", "blocks", bcStats.GetBlocks(), "txs", bcStats.GetTxs(), "events", bcStats.GetEvents(), "callTraces", bcStats.GetTraces(), "ctx", "blockchain")
 		}
 		////////////////////////////////////////////////////////////
 
