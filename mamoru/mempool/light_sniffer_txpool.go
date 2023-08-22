@@ -45,7 +45,7 @@ type TxPoolLightSniffer struct {
 
 func NewLightSniffer(ctx context.Context, txPool LightTxPool, chain lightBlockChain, chainConfig *params.ChainConfig, mamoruSniffer *mamoru.Sniffer) *TxPoolLightSniffer {
 	if mamoruSniffer == nil {
-		mamoruSniffer = mamoru.NewSniffer(nil)
+		mamoruSniffer = mamoru.NewSniffer()
 	}
 	sb := &TxPoolLightSniffer{
 		txPool:       txPool,
@@ -115,7 +115,7 @@ func (bc *TxPoolLightSniffer) processTxs(ctx context.Context, txs types.Transact
 	startTime := time.Now()
 
 	// Create tracer context
-	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
+	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig, nil))
 
 	// Set txpool context
 	tracer.SetTxpoolCtx()
@@ -196,7 +196,7 @@ func (bc *TxPoolLightSniffer) processHead(ctx context.Context, head *types.Heade
 	startTime := time.Now()
 
 	// Create tracer context
-	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig))
+	tracer := mamoru.NewTracer(mamoru.NewFeed(bc.chainConfig, nil))
 
 	// Set txpool context
 	tracer.SetTxpoolCtx()

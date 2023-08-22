@@ -15,8 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/mamoru"
 	"github.com/ethereum/go-ethereum/params"
-
-	"github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 type blockChain interface {
@@ -53,7 +51,7 @@ type TxPoolBackendSniffer struct {
 
 func NewTxPoolBackendSniffer(ctx context.Context, txPool BcTxPool, chain blockChain, chainConfig *params.ChainConfig, feeder mamoru.Feeder, mamoruSniffer *mamoru.Sniffer) *TxPoolBackendSniffer {
 	if mamoruSniffer == nil {
-		mamoruSniffer = mamoru.NewSniffer(stats.NewStatsTxpool())
+		mamoruSniffer = mamoru.NewSniffer()
 	}
 	sb := &TxPoolBackendSniffer{
 		txPool:      txPool,
@@ -118,7 +116,7 @@ func (bc *TxPoolBackendSniffer) SnifferLoop() {
 
 		case newHead := <-bc.newHeadEvent:
 			if newHead.Block != nil && newHead.Block.NumberU64() > block.NumberU64() {
-				log.Info("New core.ChainHeadEvent", "number", newHead.Block.NumberU64(), "ctx", "txpool")
+				log.Info("New core.ChainHeadEvent", "number", newHead.Block.NumberU64(), "ctx", mamoru.CtxTxpool)
 				bc.mu.RLock()
 				block = newHead.Block
 				bc.mu.RUnlock()
@@ -126,7 +124,7 @@ func (bc *TxPoolBackendSniffer) SnifferLoop() {
 
 		case newChEv := <-bc.chEv:
 			if newChEv.Block != nil && newChEv.Block.NumberU64() > block.NumberU64() {
-				log.Info("New core.ChainEvent", "number", newChEv.Block.NumberU64(), "ctx", "txpool")
+				log.Info("New core.ChainEvent", "number", newChEv.Block.NumberU64(), "ctx", mamoru.CtxTxpool)
 				bc.mu.RLock()
 				block = newChEv.Block
 				bc.mu.RUnlock()
@@ -139,9 +137,8 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 	if ctx.Err() != nil || !bc.sniffer.CheckRequirements() {
 		return
 	}
-	lcStats := bc.sniffer.GetLightchainStats()
 
-	log.Info("Mamoru TxPool Sniffer start", "txs", txs.Len(), "number", block.NumberU64(), "ctx", "txpool")
+	log.Info("Mamoru TxPool Sniffer start", "txs", txs.Len(), "number", block.NumberU64(), "ctx", mamoru.CtxTxpool)
 	startTime := time.Now()
 
 	// Create tracer context
@@ -154,7 +151,7 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 
 	stateDb, err := bc.chain.StateAt(block.Root())
 	if err != nil {
-		log.Error("Mamoru State", "err", err, "ctx", "txpool")
+		log.Error("Mamoru State", "err", err, "ctx", mamoru.CtxTxpool)
 	}
 
 	stateDb = stateDb.Copy()
@@ -163,7 +160,7 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 	for index, tx := range txs {
 		calltracer, err := mamoru.NewCallTracer(false)
 		if err != nil {
-			log.Error("Mamoru Call tracer", "err", err, "ctx", "txpool")
+			log.Error("Mamoru Call tracer", "err", err, "ctx", mamoru.CtxTxpool)
 		}
 
 		chCtx := core.ChainContext(bc.chain)
@@ -176,18 +173,18 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 		stateDb.Prepare(tx.Hash(), index)
 		from, err := types.Sender(types.LatestSigner(bc.chainConfig), tx)
 		if err != nil {
-			log.Error("types.Sender", "err", err, "number", block.NumberU64(), "ctx", "txpool")
+			log.Error("types.Sender", "err", err, "number", block.NumberU64(), "ctx", mamoru.CtxTxpool)
 		}
 		if tx.Nonce() > stateDb.GetNonce(from) {
 			stateDb.SetNonce(from, tx.Nonce())
 		}
-		log.Info("ApplyTransaction", "tx.hash", tx.Hash().String(), "tx.nonce", tx.Nonce(), "stNonce", stateDb.GetNonce(from), "number", block.NumberU64(), "ctx", "txpool")
+		log.Info("ApplyTransaction", "tx.hash", tx.Hash().String(), "tx.nonce", tx.Nonce(), "stNonce", stateDb.GetNonce(from), "number", block.NumberU64(), "ctx", mamoru.CtxTxpool)
 
 		receipt, err := core.ApplyTransaction(bc.chainConfig, chCtx, &author, gasPool, stateDb, header, tx,
 			gasUsed, vm.Config{Debug: true, Tracer: calltracer, NoBaseFee: true})
 		if err != nil {
 			log.Error("Mamoru Apply Transaction", "err", err, "number", block.NumberU64(),
-				"tx.hash", tx.Hash().String(), "ctx", "txpool")
+				"tx.hash", tx.Hash().String(), "ctx", mamoru.CtxTxpool)
 			break
 		}
 
@@ -199,24 +196,19 @@ func (bc *TxPoolBackendSniffer) process(ctx context.Context, block *types.Block,
 		callFrames, err := calltracer.TakeResult()
 		if err != nil {
 			log.Error("Mamoru tracer result", "err", err, "number", block.NumberU64(),
-				"ctx", "txpool")
+				"ctx", mamoru.CtxTxpool)
 			break
 		}
 
 		tracer.FeedCalTraces(callFrames, block.NumberU64())
-		lcStats.AddedCallTraces(uint64(len(callFrames)))
 	}
 
 	//tracer.FeedBlock(block)
 	tracer.FeedTransactions(block.Number(), txs, receipts)
 	tracer.FeedEvents(receipts)
-	tracer.Send(startTime, block.Number(), block.Hash(), "txpool")
 
-	lcStats.IncrementBlocks()
-	lcStats.AddedTxs(uint64(block.Transactions().Len()))
-	lcStats.AddedEvents(uint64(len(receipts)))
-	lcStats.GetBlocks()
-	log.Info("Mamoru Stats", "blocks", lcStats.GetBlocks(), "txs", lcStats.GetTxs(), "events", lcStats.GetEvents(), "callTraces", lcStats.GetTraces(), "ctx", "txpool")
+	tracer.Send(startTime, block.Number(), block.Hash(), mamoru.CtxTxpool)
+
 }
 
 func cleanReceiptAndLogs(receipt *types.Receipt) {

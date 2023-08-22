@@ -14,9 +14,13 @@ var (
 )
 
 type StatsBlockchain struct {
+	// Processed Blocks number
 	blocks uint64
-	txs    uint64
+	// Processed Transactions number
+	txs uint64
+	// Processed Events number
 	events uint64
+	// Processed Call Traces number
 	traces uint64
 
 	mx sync.RWMutex
@@ -25,24 +29,6 @@ type StatsBlockchain struct {
 func NewStatsBlockchain() *StatsBlockchain {
 	return &StatsBlockchain{}
 }
-
-//func (s *StatsBlockchain) Stats() *Stats {
-//	s.mx.RLock()
-//	defer s.mx.RUnlock()
-//	return s
-//}
-//
-//func (s *StatsBlockchain) Snapshot() Stats {
-//	s.mx.RLock()
-//	defer s.mx.RUnlock()
-//	return &StatsBlockchain{
-//		blocks: s.blocks,
-//		txs:    s.txs,
-//		events: s.events,
-//		traces: s.traces,
-//		mx:     sync.RWMutex{},
-//	}
-//}
 
 func (s *StatsBlockchain) GetBlocks() uint64 {
 	s.mx.RLock()
@@ -68,37 +54,37 @@ func (s *StatsBlockchain) GetTraces() uint64 {
 	return s.traces
 }
 
-func (s *StatsBlockchain) IncrementBlocks() {
+func (s *StatsBlockchain) MarkBlocks() {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.blocks += 1
+	s.blocks = 1
 	if blocksMetric != nil {
 		blocksMetric.Mark(int64(s.blocks))
 	}
 }
 
-func (s *StatsBlockchain) AddedTxs(txs uint64) {
+func (s *StatsBlockchain) MarkTxs(txs uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.txs += txs
+	s.txs = txs
 	if txsMetric != nil {
 		txsMetric.Mark(int64(s.txs))
 	}
 }
 
-func (s *StatsBlockchain) AddedEvents(events uint64) {
+func (s *StatsBlockchain) MarkEvents(events uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.events += events
+	s.events = events
 	if eventsMetric != nil {
 		eventsMetric.Mark(int64(s.events))
 	}
 }
 
-func (s *StatsBlockchain) AddedCallTraces(traces uint64) {
+func (s *StatsBlockchain) MarkCallTraces(traces uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.traces += traces
+	s.traces = traces
 	if tracesMetric != nil {
 		tracesMetric.Mark(int64(s.traces))
 	}

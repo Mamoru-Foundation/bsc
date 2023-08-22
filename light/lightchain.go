@@ -102,7 +102,7 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 		engine:        engine,
 
 		// mamoru sniffer
-		Sniffer: mamoru.NewSniffer(nil),
+		Sniffer: mamoru.NewSniffer(),
 	}
 	bc.forker = core.NewForkChoice(bc, nil)
 	var err error
@@ -497,7 +497,7 @@ func (lc *LightChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 	startTime := time.Now()
 	log.Info("Mamoru Light-chain Sniffer start", "number", lastBlock.NumberU64(), "ctx", "lightchain")
 
-	tracer := mamoru.NewTracer(mamoru.NewFeed(lc.Config()))
+	tracer := mamoru.NewTracer(mamoru.NewFeed(lc.Config(), nil))
 
 	tracer.FeedBlock(lastBlock)
 	tracer.FeedTransactions(lastBlock.Number(), lastBlock.Transactions(), receipts)

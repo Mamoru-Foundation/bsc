@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 	"math/big"
 	"os"
 	"strings"
@@ -106,18 +107,24 @@ func (bc *testBlockChain) InsertChain(blocks types.Blocks) (error, error) {
 }
 
 type testFeeder struct {
-	mu sync.RWMutex
-
+	mu         sync.RWMutex
+	stats      stats.Stats
 	block      *types.Block
 	txs        types.Transactions
 	receipts   types.Receipts
 	callFrames []*mamoru.CallFrame
 }
 
+func (f *testFeeder) Stats() stats.Stats {
+	return f.stats
+}
+
 func (f *testFeeder) FeedBlock(block *types.Block) mamoru_sniffer.Block {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	f.block = block
+	f.stats.MarkBlocks()
+
 	return mamoru_sniffer.Block{}
 }
 
@@ -125,6 +132,8 @@ func (f *testFeeder) FeedTransactions(_ *big.Int, txs types.Transactions, _ type
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	f.txs = append(f.txs, txs...)
+	f.stats.MarkTxs(uint64(len(txs)))
+
 	return []mamoru_sniffer.Transaction{}
 }
 
@@ -132,6 +141,8 @@ func (f *testFeeder) FeedEvents(receipts types.Receipts) []mamoru_sniffer.Event 
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	f.receipts = append(f.receipts, receipts...)
+	f.stats.MarkEvents(uint64(len(receipts)))
+
 	return []mamoru_sniffer.Event{}
 }
 
@@ -139,6 +150,8 @@ func (f *testFeeder) FeedCallTraces(callFrames []*mamoru.CallFrame, _ uint64) []
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	f.callFrames = append(f.callFrames, callFrames...)
+	f.stats.MarkCallTraces(uint64(len(f.callFrames)))
+
 	return []mamoru_sniffer.CallTrace{}
 }
 
@@ -226,7 +239,7 @@ func TestMempoolSniffer(t *testing.T) {
 	})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	feeder := &testFeeder{}
+	feeder := &testFeeder{stats: stats.NewStatsTxpool()}
 	memSniffer := NewTxPoolBackendSniffer(ctx, pool, bChain, params.TestChainConfig, feeder, nil)
 
 	memSniffer.sniffer.SetDownloader(&statusProgressMock{})
@@ -266,6 +279,11 @@ func TestMempoolSniffer(t *testing.T) {
 		assert.NotNil(t, call.Type, "type must be not nil")
 		assert.Equal(t, addrToHex(address), call.From, "address must be equal")
 	}
+
+	assert.Equal(t, uint64(0), feeder.Stats().GetBlocks(), "blocks must be equal")
+	assert.Equal(t, uint64(feeder.Txs().Len()), feeder.Stats().GetTxs(), "txs must be equal")
+	assert.Equal(t, uint64(feeder.Receipts().Len()), feeder.Stats().GetEvents(), "events must be equal")
+	assert.Equal(t, uint64(len(feeder.CallFrames())), feeder.Stats().GetTraces(), "call traces must be equal")
 
 }
 

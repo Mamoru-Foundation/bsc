@@ -1,6 +1,7 @@
 package mamoru
 
 import (
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 	"math/big"
 
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
@@ -12,4 +13,5 @@ type Feeder interface {
 	FeedTransactions(blockNumber *big.Int, txs types.Transactions, receipts types.Receipts) []mamoru_sniffer.Transaction
 	FeedEvents(types.Receipts) []mamoru_sniffer.Event
 	FeedCallTraces([]*CallFrame, uint64) []mamoru_sniffer.CallTrace
+	Stats() stats.Stats
 }

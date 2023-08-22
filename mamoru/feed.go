@@ -1,6 +1,7 @@
 package mamoru
 
 import (
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 	"math/big"
 
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
@@ -13,10 +14,11 @@ var _ Feeder = &EthFeed{}
 
 type EthFeed struct {
 	chainConfig *params.ChainConfig
+	stats       stats.Stats
 }
 
-func NewFeed(chainConfig *params.ChainConfig) Feeder {
-	return &EthFeed{chainConfig: chainConfig}
+func NewFeed(chainConfig *params.ChainConfig, statistic stats.Stats) Feeder {
+	return &EthFeed{chainConfig: chainConfig, stats: statistic}
 }
 
 func (f *EthFeed) FeedBlock(block *types.Block) mamoru_sniffer.Block {
@@ -34,6 +36,8 @@ func (f *EthFeed) FeedBlock(block *types.Block) mamoru_sniffer.Block {
 	blockData.Size = float64(block.Size())
 	blockData.GasUsed = block.GasUsed()
 	blockData.GasLimit = block.GasLimit()
+
+	f.stats.MarkBlocks()
 
 	return blockData
 }
@@ -74,6 +78,8 @@ func (f *EthFeed) FeedTransactions(blockNumber *big.Int, txs types.Transactions,
 		transactions = append(transactions, transaction)
 	}
 
+	f.stats.MarkTxs(uint64(len(transactions)))
+
 	return transactions
 }
 
@@ -97,6 +103,8 @@ func (f *EthFeed) FeedCallTraces(callFrames []*CallFrame, blockNumber uint64) []
 
 		callTraces = append(callTraces, callTrace)
 	}
+
+	f.stats.MarkCallTraces(uint64(len(callTraces)))
 
 	return callTraces
 }
@@ -139,5 +147,11 @@ func (f *EthFeed) FeedEvents(receipts types.Receipts) []mamoru_sniffer.Event {
 		}
 	}
 
+	f.stats.MarkEvents(uint64(len(events)))
+
 	return events
+}
+
+func (f *EthFeed) Stats() stats.Stats {
+	return f.stats
 }

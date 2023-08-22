@@ -9,7 +9,6 @@ import (
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 var (
@@ -24,12 +23,11 @@ type statusProgress interface {
 type Sniffer struct {
 	mu     sync.Mutex
 	status statusProgress
-	stats  stats.Stats
 	synced bool
 }
 
-func NewSniffer(stats stats.Stats) *Sniffer {
-	return &Sniffer{stats: stats}
+func NewSniffer() *Sniffer {
+	return &Sniffer{}
 }
 
 func (s *Sniffer) checkSynced() bool {
@@ -58,18 +56,6 @@ func (s *Sniffer) checkSynced() bool {
 	}
 
 	return false
-}
-
-func (s *Sniffer) GetBlockchainStats() *stats.StatsBlockchain {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.stats.(*stats.StatsBlockchain)
-}
-
-func (s *Sniffer) GetLightchainStats() *stats.StatsTxpool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.stats.(*stats.StatsTxpool)
 }
 
 func (s *Sniffer) SetDownloader(downloader statusProgress) {

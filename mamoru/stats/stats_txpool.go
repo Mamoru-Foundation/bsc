@@ -14,9 +14,11 @@ var (
 )
 
 type StatsTxpool struct {
-	blocks uint64 // TODO: remove
-	txs    uint64
+	// Processed Transactions number
+	txs uint64
+	// Processed Events number
 	events uint64
+	// Processed Call Traces number
 	traces uint64
 
 	mx sync.RWMutex
@@ -26,28 +28,10 @@ func NewStatsTxpool() *StatsTxpool {
 	return &StatsTxpool{}
 }
 
-//func (s *StatsBlockchain) Stats() *Stats {
-//	s.mx.RLock()
-//	defer s.mx.RUnlock()
-//	return s
-//}
-//
-//func (s *StatsBlockchain) Snapshot() Stats {
-//	s.mx.RLock()
-//	defer s.mx.RUnlock()
-//	return &StatsBlockchain{
-//		blocks: s.blocks,
-//		txs:    s.txs,
-//		events: s.events,
-//		traces: s.traces,
-//		mx:     sync.RWMutex{},
-//	}
-//}
-
 func (s *StatsTxpool) GetBlocks() uint64 {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
-	return s.blocks
+	return 0
 }
 
 func (s *StatsTxpool) GetTxs() uint64 {
@@ -68,37 +52,34 @@ func (s *StatsTxpool) GetTraces() uint64 {
 	return s.traces
 }
 
-func (s *StatsTxpool) IncrementBlocks() {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-	s.blocks += 1
+func (s *StatsTxpool) MarkBlocks() {
 	if blocksMetricTx != nil {
-		blocksMetricTx.Mark(int64(s.blocks))
+		blocksMetricTx.Mark(0)
 	}
 }
 
-func (s *StatsTxpool) AddedTxs(txs uint64) {
+func (s *StatsTxpool) MarkTxs(txs uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.txs += txs
+	s.txs = txs
 	if txsMetricTx != nil {
 		txsMetricTx.Mark(int64(s.txs))
 	}
 }
 
-func (s *StatsTxpool) AddedEvents(events uint64) {
+func (s *StatsTxpool) MarkEvents(events uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.events += events
+	s.events = events
 	if eventsMetricTx != nil {
 		eventsMetricTx.Mark(int64(s.events))
 	}
 }
 
-func (s *StatsTxpool) AddedCallTraces(traces uint64) {
+func (s *StatsTxpool) MarkCallTraces(traces uint64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.traces += traces
+	s.traces = traces
 	if tracesMetricTx != nil {
 		tracesMetricTx.Mark(int64(s.traces))
 	}

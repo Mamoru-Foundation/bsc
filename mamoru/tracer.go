@@ -11,6 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 )
 
+const (
+	CtxBlockchain  = "blockchain"
+	CtxLightchain  = "lightchain"
+	CtxLightTxpool = "lighttxpool"
+	CtxTxpool      = "txpool"
+)
+
 type Tracer struct {
 	feeder  Feeder
 	mu      sync.Mutex
@@ -26,6 +33,10 @@ func NewTracer(feeder Feeder) *Tracer {
 // SetTxpoolCtx Set the context of the sniffer
 func (t *Tracer) SetTxpoolCtx() {
 	t.builder.SetMempoolSource()
+}
+
+func (t *Tracer) SetStatistics(blocks, txs, events, callTraces uint64) {
+	t.builder.SetStatistics(blocks, txs, events, callTraces)
 }
 
 func (t *Tracer) FeedBlock(block *types.Block) {
@@ -74,5 +85,17 @@ func (t *Tracer) Send(start time.Time, blockNumber *big.Int, blockHash common.Ha
 		"hash", blockHash,
 		"ctx", snifferContext,
 	}
+
+	stats := t.feeder.Stats()
+
+	log.Info("Mamoru Stats",
+		"blocks", stats.GetBlocks(),
+		"txs", stats.GetTxs(),
+		"events", stats.GetEvents(),
+		"callTraces", stats.GetTraces(),
+		"ctx", snifferContext)
+
+	t.builder.SetStatistics(stats.GetBlocks(), stats.GetTraces(), stats.GetEvents(), stats.GetTraces())
+
 	log.Info("Mamoru Sniffer finish", logCtx...)
 }

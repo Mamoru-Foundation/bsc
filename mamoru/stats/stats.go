@@ -1,12 +1,12 @@
 package stats
 
 type Stats interface {
-	//Stats() *Stats
+	GetBlocks() uint64
 	GetTxs() uint64
 	GetEvents() uint64
 	GetTraces() uint64
-	IncrementBlocks()
-	AddedTxs(uint64)
-	AddedEvents(uint64)
-	AddedCallTraces(uint64)
+	MarkBlocks()
+	MarkTxs(uint64)
+	MarkEvents(uint64)
+	MarkCallTraces(uint64)
 }
