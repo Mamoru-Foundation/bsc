@@ -1,11 +1,11 @@
 package mamoru
 
 import (
-	"github.com/ethereum/go-ethereum/mamoru/stats"
 	"math/big"
 
 	"github.com/Mamoru-Foundation/mamoru-sniffer-go/mamoru_sniffer"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 type Feeder interface {
