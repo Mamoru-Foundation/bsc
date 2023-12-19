@@ -57,6 +57,9 @@ import (
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
 	"golang.org/x/exp/slices"
+
+	"github.com/ethereum/go-ethereum/mamoru"
+	statistics "github.com/ethereum/go-ethereum/mamoru/stats"
 )
 
 var (
@@ -316,6 +319,11 @@ type BlockChain struct {
 
 	// monitor
 	doubleSignMonitor *monitor.DoubleSignMonitor
+
+	// mamoru Sniffer
+	Sniffer *mamoru.Sniffer
+	// mamoru Feeder
+	MamoruFeeder mamoru.Feeder
 }
 
 // NewBlockChain returns a fully initialised block chain using information
@@ -382,6 +390,14 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, genesis *Genesis
 		diffQueue:          prque.New[int64, *types.DiffLayer](nil),
 		diffQueueBuffer:    make(chan *types.DiffLayer),
 	}
+
+	/////////////////////////////////////////////////////////////////////
+	// mamoru Sniffer
+	bc.Sniffer = mamoru.NewSniffer()
+	// mamoru MamoruFeeder
+	bc.MamoruFeeder = nil
+	/////////////////////////////////////////////////////////////////////
+
 	bc.flushInterval.Store(int64(cacheConfig.TrieTimeLimit))
 	bc.forker = NewForkChoice(bc, shouldPreserve)
 	bc.stateCache = state.NewDatabaseWithNodeDB(bc.db, bc.triedb)
@@ -2247,7 +2263,17 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 
 			// 1.do state prefetch for snapshot cache
 			throwaway := statedb.CopyDoPrefetch()
-			go bc.prefetcher.Prefetch(block, throwaway, &bc.vmConfig, interruptCh)
+			//////////////////////////////////////////////////////////////
+			// Clear Mamoru Tracer
+			vnConfig := vm.Config{
+				Tracer:                  nil,
+				NoBaseFee:               bc.vmConfig.NoBaseFee,
+				NoRecursion:             bc.vmConfig.NoRecursion,
+				EnablePreimageRecording: bc.vmConfig.EnablePreimageRecording,
+				ExtraEips:               bc.vmConfig.ExtraEips,
+			}
+			//////////////////////////////////////////////////////////////
+			go bc.prefetcher.Prefetch(block, throwaway, &vnConfig, interruptCh)
 
 			// 2.do trie prefetch for MPT trie node cache
 			// it is for the big state trie tree, prefetch based on transaction's From/To address.
@@ -2261,7 +2287,59 @@ func (bc *BlockChain) insertChain(chain types.Blocks, setHead bool) (int, error)
 		}
 		statedb.SetExpectedStateRoot(block.Root())
 		pstart := time.Now()
-		statedb, receipts, logs, usedGas, err := bc.processor.Process(block, statedb, bc.vmConfig)
+		//////////////////////////////////////////////////////////////
+		// Mamoru Tracer
+		vmConfig := bc.vmConfig
+		if bc.Sniffer.CheckRequirements() {
+			vmConfig = vm.Config{
+				Tracer:                  mamoru.NewCallStackTracer(block.Transactions(), len(block.Transactions()), mamoru.RandStringBytes(8)+"_"+block.Number().String(), false, mamoru.CtxBlockchain),
+				NoBaseFee:               bc.vmConfig.NoBaseFee,
+				NoRecursion:             bc.vmConfig.NoRecursion,
+				EnablePreimageRecording: bc.vmConfig.EnablePreimageRecording,
+				ExtraEips:               bc.vmConfig.ExtraEips,
+			}
+		} else {
+			bc.vmConfig.Tracer = nil
+			vmConfig = bc.vmConfig
+		}
+		//////////////////////////////////////////////////////////////
+		statedb, receipts, logs, usedGas, err := bc.processor.Process(block, statedb, vmConfig)
+
+		////////////////////////////////////////////////////////////
+		// Mamoru Sniffer
+		if bc.Sniffer.CheckRequirements() && vmConfig.Tracer != nil {
+			startTime := time.Now()
+			log.Info("Mamoru Sniffer Start", "number", block.Number().String(), "txs", block.Transactions().Len(), "ctx", mamoru.CtxBlockchain)
+			feeder := bc.MamoruFeeder //
+			if feeder == nil {
+				feeder = mamoru.NewFeed(bc.chainConfig, statistics.NewStatsBlockchain())
+			}
+			tracer := mamoru.NewTracer(feeder)
+			tracer.FeedBlock(block)
+			tracer.FeedTransactions(block.Number(), block.Time(), block.Transactions(), receipts)
+			tracer.FeedEvents(receipts)
+
+			// Collect Call Trace data from EVM
+			if callTracer, ok := vmConfig.Tracer.(*mamoru.CallStackTracer); ok {
+				callFrames, err := callTracer.TakeResult()
+				if err != nil {
+					log.Error("Mamoru Sniffer Tracer Error", "err", err, "ctx", mamoru.CtxBlockchain)
+					//return it.index, err
+				} else {
+					var bytesLength int
+					for i := 0; i < len(callFrames); i++ {
+						bytesLength += len(callFrames[i].Input)
+					}
+
+					log.Info("Mamoru finish collected", "number", block.Number().String(), "txs", block.Transactions().Len(),
+						"receipts", len(receipts), "callFrames", len(callFrames), "callFrames.input.len", bytesLength, "ctx", mamoru.CtxBlockchain)
+					tracer.FeedCallTraces(callFrames, block.NumberU64())
+				}
+			}
+			// Send to Mamoru
+			tracer.Send(startTime, block.Number(), block.Hash(), mamoru.CtxBlockchain)
+		}
+		////////////////////////////////////////////////////////////
 		close(interruptCh) // state prefetch can be stopped
 		if err != nil {
 			bc.reportBlock(block, receipts, err)
