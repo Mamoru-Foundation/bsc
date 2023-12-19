@@ -18,6 +18,7 @@
 package eth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -55,6 +56,9 @@ import (
 	"github.com/ethereum/go-ethereum/internal/ethapi"
 	"github.com/ethereum/go-ethereum/internal/shutdowncheck"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/mamoru"
+	"github.com/ethereum/go-ethereum/mamoru/mempool"
+	"github.com/ethereum/go-ethereum/mamoru/stats"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/node"
@@ -302,6 +306,11 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	if err != nil {
 		return nil, err
 	}
+	////////////////////////////////////////////////////////
+	mempool.NewTxPoolBackendSniffer(context.Background(), eth.txPool, eth.blockchain, chainConfig,
+		mamoru.NewFeed(chainConfig, stats.NewStatsTxpool()), eth.blockchain.Sniffer)
+
+	////////////////////////////////////////////////////////
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
 	if eth.handler, err = newHandler(&handlerConfig{
@@ -320,6 +329,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}); err != nil {
 		return nil, err
 	}
+	/////////////////////////////////////////////////////////////
+	//Mamoru Sniffer set downloader for sync progress check
+	eth.blockchain.Sniffer.SetDownloader(eth.handler.downloader)
+	/////////////////////////////////////////////////////////////
 
 	eth.miner = miner.New(eth, &config.Miner, eth.blockchain.Config(), eth.EventMux(), eth.engine, eth.isLocalBlock)
 	eth.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
