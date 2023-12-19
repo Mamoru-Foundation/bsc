@@ -1,10 +1,11 @@
-name: Lint
+name: Build Test
 
 on:
   push:
-    branches: 
+    branches:
       - master
       - develop
+      - 'mamoru*'
 
   pull_request:
     branches:
@@ -12,7 +13,7 @@ on:
       - develop
 
 jobs:
-  golang-lint:
+  unit-test:
     strategy:
       matrix:
         go-version: [1.21.x]
@@ -23,7 +24,7 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
-        
+
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -42,17 +43,8 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    
-    - run: |
-        go mod tidy
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
-        version: v1.55.2
-        working-directory: ./
-        skip-pkg-cache: true
-        skip-cache: true
-        skip-build-cache: true
-        args: --timeout=99m --config ./.golangci.yml
+    - name: Test Build
+      run: |
+        go mod download
+        make geth
