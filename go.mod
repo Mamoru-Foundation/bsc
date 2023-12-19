@@ -295,3 +295,5 @@ replace (
 	github.com/syndtr/goleveldb v1.0.1 => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tendermint/tendermint => github.com/bnb-chain/tendermint v0.31.16
 )
+
+require github.com/Mamoru-Foundation/mamoru-sniffer-go v0.11.3
