@@ -5,13 +5,13 @@ on:
     branches:
       - master
       - develop
-      - mamoru
+      - 'mamoru*'
 
   pull_request:
     branches:
       - master
       - develop
-      - mamoru
+      - 'mamoru*'
 
 jobs:
   unit-test:

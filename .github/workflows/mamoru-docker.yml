@@ -4,7 +4,7 @@ on:
     branches:
       - master
       - develop
-      - mamoru
+      - 'mamoru*'
 
 env:
   REPOSITORY: mamorufoundation/bsc-sniffer
